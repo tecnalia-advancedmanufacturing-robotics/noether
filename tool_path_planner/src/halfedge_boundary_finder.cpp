@@ -26,6 +26,7 @@
 #include <pcl/point_types.h>
 #include <pcl/PointIndices.h>
 #include <pcl/kdtree/kdtree_flann.h>
+#include <pcl/search/impl/search.hpp>
 #include <vtkParametricSpline.h>
 #include <console_bridge/console.h>
 #include <noether_conversions/noether_conversions.h>
@@ -263,7 +264,7 @@ bool applyEqualDistance(const pcl::PointCloud<pcl::PointNormal>& in, pcl::PointC
   std::size_t num_points =  in_points->size();
   std::vector<Vector3f> Vj; // normalized vector from one point toward the next
   std::vector<double>   Dj; // distance from point i to i+1
-  
+
   // compute normalized vectors and distances from point to point over all the trajectory
   for(std::size_t j=0; j< num_points -1; j++)
   {

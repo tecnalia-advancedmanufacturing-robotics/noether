@@ -9,6 +9,7 @@
 #include <pcl/io/pcd_io.h>
 #include <pcl/io/vtk_lib_io.h>
 #include <pcl/kdtree/kdtree_flann.h>
+#include <pcl/search/impl/search.hpp>
 #include <pcl/features/normal_3d.h>
 #include <pcl/point_types.h>
 #include <pcl/conversions.h>
