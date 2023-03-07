@@ -281,17 +281,17 @@ void rectifyDirection(const vtkSmartPointer<vtkPoints>& points,
 noether::ToolPaths convertToPoses(const std::vector<RasterConstructData>& rasters_data)
 {
   noether::ToolPaths rasters_array;
-  bool reverse = true;
+  // bool reverse = false;
   for (const RasterConstructData& rd : rasters_data)
   {
-    reverse = !reverse;
+    // reverse = !reverse;
     noether::ToolPath raster_path;
     std::vector<vtkSmartPointer<vtkPolyData>> raster_segments;
     raster_segments.assign(rd.raster_segments.begin(), rd.raster_segments.end());
-    if (reverse)
-    {
-      std::reverse(raster_segments.begin(), raster_segments.end());
-    }
+    // if (reverse)
+    // {
+    //   std::reverse(raster_segments.begin(), raster_segments.end());
+    // }
 
     for (const vtkSmartPointer<vtkPolyData>& polydata : raster_segments)
     {
@@ -301,10 +301,10 @@ noether::ToolPaths convertToPoses(const std::vector<RasterConstructData>& raster
       Eigen::Isometry3d pose;
       std::vector<int> indices(num_points);
       std::iota(indices.begin(), indices.end(), 0);
-      if (reverse)
-      {
-        std::reverse(indices.begin(), indices.end());
-      }
+      // if (reverse)
+      // {
+      //   std::reverse(indices.begin(), indices.end());
+      // }
       for (std::size_t i = 0; i < indices.size() - 1; i++)
       {
         int idx = indices[i];
