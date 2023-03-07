@@ -164,7 +164,8 @@ boost::optional<ToolPaths> PlaneSlicerRasterGenerator::generate()
   try
   {
     noether::PlaneSlicerRasterPlanner planner(
-        std::make_unique<noether::PrincipalAxisDirectionGenerator>(config_.raster_rot_offset),
+        std::make_unique<noether::FixedDirectionGenerator>(
+            Eigen::AngleAxisd(config_.raster_rot_offset, Eigen::Vector3d::UnitZ()) * Eigen::Vector3d::UnitX()),
         std::make_unique<noether::CentroidOriginGenerator>());
     planner.setLineSpacing(config_.raster_spacing);
     planner.setPointSpacing(config_.point_spacing);
