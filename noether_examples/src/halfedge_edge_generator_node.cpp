@@ -105,12 +105,13 @@ public:
 
     // sending request
     noether_msgs::GenerateToolPathsGoal goal;
-    noether_msgs::ToolPathConfig config;
-    config.type = noether_msgs::ToolPathConfig::HALFEDGE_EDGE_GENERATOR;
-    tool_path_planner::toHalfedgeConfigMsg(config.halfedge_generator,
-                                           tool_path_planner::HalfedgeEdgeGenerator::Config());
+    noether_msgs::ToolPathConfig config_msg;
+    config_msg.type = noether_msgs::ToolPathConfig::HALFEDGE_EDGE_GENERATOR;
+    tool_path_planner::HalfedgeEdgeGenerator::Config config;
+    config.min_num_points = 0;
+    tool_path_planner::toHalfedgeConfigMsg(config_msg.halfedge_generator, config);
 
-    goal.path_configs.push_back(config);
+    goal.path_configs.push_back(config_msg);
     goal.surface_meshes.push_back(mesh_msg);
     goal.proceed_on_failure = true;
     ac_.sendGoal(goal);
