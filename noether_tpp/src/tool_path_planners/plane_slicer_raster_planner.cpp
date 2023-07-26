@@ -1,11 +1,11 @@
 #include <noether_tpp/tool_path_planners/raster/plane_slicer_raster_planner.h>
 
-#include <algorithm>  // std::find(), std::reverse(), std::unique()
-#include <numeric>    // std::iota()
-#include <stdexcept>  // std::runtime_error
-#include <string>     // std::to_string()
-#include <utility>    // std::move()
-#include <vector>     // std::vector
+#include <algorithm>            // std::find(), std::reverse(), std::unique()
+#include <numeric>              // std::iota()
+#include <stdexcept>            // std::runtime_error
+#include <string>               // std::to_string()
+#include <utility>              // std::move()
+#include <vector>               // std::vector
 
 #include <pcl/common/common.h>  // pcl::getMinMax3d()
 #include <pcl/common/pca.h>     // pcl::PCA
@@ -75,14 +75,6 @@ vtkSmartPointer<vtkPoints> enforcePointSpacing(const vtkSmartPointer<vtkPoints>&
 {
   vtkSmartPointer<vtkPoints> new_points = vtkSmartPointer<vtkPoints>::New();
 
-  // create spline
-  // vtkSmartPointer<vtkParametricSpline> spline = vtkSmartPointer<vtkParametricSpline>::New();
-  // spline->SetPoints(points);
-  // spline->SetParameterizeByLength(true);
-  // spline->ClosedOff();
-
-  // adding first point
-
   Eigen::Vector3d a, b, current_vector;
   int i = 0;
   points->GetPoint(i, a.data());
@@ -93,7 +85,10 @@ vtkSmartPointer<vtkPoints> enforcePointSpacing(const vtkSmartPointer<vtkPoints>&
 
   new_points->InsertNextPoint(a.data());
 
-  for (double desired_distance = point_spacing; desired_distance < total_length; desired_distance += point_spacing)
+  double adjusted_point_spacing = total_length / std::ceil(total_length / point_spacing);
+
+  for (double desired_distance = point_spacing; desired_distance < total_length;
+       desired_distance += adjusted_point_spacing)
   {
     while (desired_distance > previous_distances + current_distance)
     {
@@ -101,8 +96,8 @@ vtkSmartPointer<vtkPoints> enforcePointSpacing(const vtkSmartPointer<vtkPoints>&
       i += 1;
       points->GetPoint(i, a.data());
       points->GetPoint(i + 1, b.data());
-      current_distance = (b-a).norm();
-      current_vector = (b-a).normalized();
+      current_distance = (b - a).norm();
+      current_vector = (b - a).normalized();
     }
     Eigen::Vector3d np = a + current_vector * (desired_distance - previous_distances);
     new_points->InsertNextPoint(np.data());
