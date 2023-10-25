@@ -19,8 +19,8 @@ ToolPaths RasterPlanner::plan(const pcl::PolygonMesh& mesh) const
 
   // Apply the modifications necessary to produce the "default" behavior
   // First, organize the position of the waypoints into a raster pattern
-  // RasterOrganizationModifier raster;
-  // tool_paths = raster.modify(tool_paths);
+  RasterOrganizationModifier raster;
+  tool_paths = raster.modify(tool_paths);
 
   // Next, update the orientation of the waypoints such that their x-axes align with the direction of travel between
   // adjacent waypoints. Note: this modifier does not change the z-axis of the waypoints (normal to the surface)
