@@ -210,33 +210,25 @@ visualization_msgs::MarkerArray convertToAxisMarkers(const noether_msgs::ToolPat
   using namespace Eigen;
 
   visualization_msgs::MarkerArray markers;
+  int marker_id = start_id;
 
-  auto create_line_marker = [&](const int id,
-                                const std::tuple<float, float, float, float>& rgba) -> visualization_msgs::Marker {
+  auto add_arrow_marker = [&](const int id,
+                              const std::tuple<float, float, float, float>& rgba,
+                              const Isometry3d& eigen_pose,
+                              const Vector3d& dir,
+                              const geometry_msgs::Point& p1) {
     visualization_msgs::Marker line_marker;
     line_marker.action = line_marker.ADD;
     std::tie(line_marker.color.r, line_marker.color.g, line_marker.color.b, line_marker.color.a) = rgba;
     line_marker.header.frame_id = frame_id;
-    line_marker.type = line_marker.LINE_LIST;
+    line_marker.type = line_marker.ARROW;
     line_marker.id = id;
     line_marker.frame_locked = true;
     line_marker.lifetime = ros::Duration(0);
     line_marker.ns = ns;
     std::tie(line_marker.scale.x, line_marker.scale.y, line_marker.scale.z) = std::make_tuple(axis_scale, 0.0, 0.0);
     line_marker.pose = pose3DtoPoseMsg(offset);
-    return line_marker;
-  };
 
-  // markers for each axis line
-  int marker_id = start_id;
-  visualization_msgs::Marker x_axis_marker = create_line_marker(++marker_id, std::make_tuple(1.0, 0.0, 0.0, 1.0));
-  visualization_msgs::Marker y_axis_marker = create_line_marker(++marker_id, std::make_tuple(0.0, 1.0, 0.0, 1.0));
-  visualization_msgs::Marker z_axis_marker = create_line_marker(++marker_id, std::make_tuple(0.0, 0.0, 1.0, 1.0));
-
-  auto add_axis_line = [](const Isometry3d& eigen_pose,
-                          const Vector3d& dir,
-                          const geometry_msgs::Point& p1,
-                          visualization_msgs::Marker& marker) {
     geometry_msgs::Point p2;
     Eigen::Vector3d line_endpoint;
 
@@ -245,8 +237,10 @@ visualization_msgs::MarkerArray convertToAxisMarkers(const noether_msgs::ToolPat
     std::tie(p2.x, p2.y, p2.z) = std::make_tuple(line_endpoint.x(), line_endpoint.y(), line_endpoint.z());
 
     // adding line
-    marker.points.push_back(p1);
-    marker.points.push_back(p2);
+    line_marker.points.push_back(p1);
+    line_marker.points.push_back(p2);
+
+    markers.markers.push_back(line_marker);
   };
 
   for (const noether_msgs::ToolPath& tool_path : toolpaths.paths)
@@ -261,16 +255,15 @@ visualization_msgs::MarkerArray convertToAxisMarkers(const noether_msgs::ToolPat
         geometry_msgs::Point p1;
         std::tie(p1.x, p1.y, p1.z) = std::make_tuple(pose.position.x, pose.position.y, pose.position.z);
 
-        add_axis_line(eigen_pose, Vector3d::UnitX() * axis_length, p1, x_axis_marker);
-        add_axis_line(eigen_pose, Vector3d::UnitY() * axis_length, p1, y_axis_marker);
-        add_axis_line(eigen_pose, Vector3d::UnitZ() * axis_length, p1, z_axis_marker);
+        add_arrow_marker(
+            ++marker_id, std::make_tuple(1.0, 0.0, 0.0, 1.0), eigen_pose, Vector3d::UnitX() * axis_length, p1);
+        add_arrow_marker(
+            ++marker_id, std::make_tuple(0.0, 1.0, 0.0, 1.0), eigen_pose, Vector3d::UnitY() * axis_length, p1);
+        add_arrow_marker(
+            ++marker_id, std::make_tuple(0.0, 0.0, 1.0, 1.0), eigen_pose, Vector3d::UnitZ() * axis_length, p1);
       }
     }
   }
-
-  markers.markers.push_back(x_axis_marker);
-  markers.markers.push_back(y_axis_marker);
-  markers.markers.push_back(z_axis_marker);
   return markers;
 }
 
