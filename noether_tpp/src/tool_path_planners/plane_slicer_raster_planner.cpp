@@ -475,6 +475,14 @@ ToolPaths PlaneSlicerRasterPlanner::planImpl(const pcl::PolygonMesh& mesh) const
 
     centroid = pca.getMean().head<3>().cast<double>();
     pca_vecs = (pca.getEigenVectors().array().rowwise() * scales.transpose()).cast<double>();
+    // Ensure consistency of direction of eigenvectors
+    if (pca_vecs.col(0).sum()<0){
+      pca_vecs.col(0) = -pca_vecs.col(0);
+    }
+    if (pca_vecs.col(1).sum()<0){
+      pca_vecs.col(1) = -pca_vecs.col(1);
+    }
+    pca_vecs.col(2) = pca_vecs.col(0).cross(pca_vecs.col(1)).normalized() * scales(2);
   }
 
   // Get the initial cutting plane
