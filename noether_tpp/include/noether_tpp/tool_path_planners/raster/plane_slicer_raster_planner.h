@@ -23,8 +23,9 @@
 namespace noether
 {
 /**
+ * @ingroup raster_planners
  * @brief An implementation of the Raster Planner using a series of parallel cutting planes.
- * This implementation works best on approximately planar parts.
+ * @details This implementation works best on approximately planar parts.
  * The direction generator defines the direction of the raster cut.
  * The cut normal (i.e., the raster step direction) is defined by the cross product of the cut direction and the
  * smallest principal axis of the mesh.
@@ -53,6 +54,15 @@ protected:
   double min_segment_size_;
   /** @brief Search radius for calculating normals (m) */
   double search_radius_;
+};
+
+struct PlaneSlicerRasterPlannerFactory : public RasterPlannerFactory
+{
+  bool bidirectional;
+  double min_segment_size;
+  double search_radius;
+
+  ToolPathPlanner::ConstPtr create() const override;
 };
 
 }  // namespace noether

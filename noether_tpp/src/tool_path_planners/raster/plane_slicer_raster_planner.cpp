@@ -1,4 +1,5 @@
 #include <noether_tpp/tool_path_planners/raster/plane_slicer_raster_planner.h>
+#include <noether_tpp/utils.h>
 
 #include <algorithm>  // std::find(), std::reverse(), std::unique()
 #include <numeric>    // std::iota()
@@ -260,43 +261,14 @@ void mergeRasterSegments(const vtkSmartPointer<vtkPoints>& points,
   });
 }
 
-void rectifyDirection(const vtkSmartPointer<vtkPoints>& points,
-                      const Eigen::Vector3d& ref_point,
-                      std::vector<std::vector<vtkIdType>>& points_lists)
-{
-  Eigen::Vector3d p0, pf;
-  if (points_lists.size() < 2)
-    return;
-
-  // getting first and last points
-  points->GetPoint(points_lists.front().front(), p0.data());
-  points->GetPoint(points_lists.back().back(), pf.data());
-
-  bool reverse = (ref_point - p0).norm() > (ref_point - pf).norm();
-  if (reverse)
-  {
-    for (auto& s : points_lists)
-    {
-      std::reverse(s.begin(), s.end());
-    }
-    std::reverse(points_lists.begin(), points_lists.end());
-  }
-}
-
 noether::ToolPaths convertToPoses(const std::vector<RasterConstructData>& rasters_data)
 {
   noether::ToolPaths rasters_array;
-  bool reverse = true;
   for (const RasterConstructData& rd : rasters_data)
   {
-    reverse = !reverse;
     noether::ToolPath raster_path;
     std::vector<vtkSmartPointer<vtkPolyData>> raster_segments;
     raster_segments.assign(rd.raster_segments.begin(), rd.raster_segments.end());
-    if (reverse)
-    {
-      std::reverse(raster_segments.begin(), raster_segments.end());
-    }
 
     for (const vtkSmartPointer<vtkPolyData>& polydata : raster_segments)
     {
@@ -306,10 +278,6 @@ noether::ToolPaths convertToPoses(const std::vector<RasterConstructData>& raster
       Eigen::Isometry3d pose;
       std::vector<int> indices(num_points);
       std::iota(indices.begin(), indices.end(), 0);
-      if (reverse)
-      {
-        std::reverse(indices.begin(), indices.end());
-      }
       for (std::size_t i = 0; i < indices.size() - 1; i++)
       {
         int idx = indices[i];
@@ -480,35 +448,21 @@ void PlaneSlicerRasterPlanner::generateRastersBidirectionally(const bool bidirec
 
 ToolPaths PlaneSlicerRasterPlanner::planImpl(const pcl::PolygonMesh& mesh) const
 {
+  if (!hasNormals(mesh))
+  {
+    std::stringstream ss;
+    ss << "The input mesh does not have vertex normals, which are required for the plane slice raster tool path "
+          "planner. "
+       << "Use a MeshModifier to generate vertex normals for the mesh, or provide a different mesh with vertex "
+          "normals.";
+    throw std::runtime_error(ss.str());
+  }
+
   // Convert input mesh to VTK type & calculate normals if necessary
   vtkSmartPointer<vtkPolyData> mesh_data_ = vtkSmartPointer<vtkPolyData>::New();
   pcl::VTKUtils::mesh2vtk(mesh, mesh_data_);
   mesh_data_->BuildLinks();
   mesh_data_->BuildCells();
-  if (!mesh_data_->GetPointData()->GetNormals() || !mesh_data_->GetCellData()->GetNormals())
-  {
-    vtkSmartPointer<vtkPolyDataNormals> normal_generator = vtkSmartPointer<vtkPolyDataNormals>::New();
-    normal_generator->SetInputData(mesh_data_);
-    normal_generator->ComputePointNormalsOn();
-    normal_generator->SetComputeCellNormals(!mesh_data_->GetCellData()->GetNormals());
-    normal_generator->SetFeatureAngle(M_PI_2);
-    normal_generator->SetSplitting(true);
-    normal_generator->SetConsistency(true);
-    normal_generator->SetAutoOrientNormals(false);
-    normal_generator->SetFlipNormals(false);
-    normal_generator->SetNonManifoldTraversal(false);
-    normal_generator->Update();
-
-    if (!mesh_data_->GetPointData()->GetNormals())
-    {
-      mesh_data_->GetPointData()->SetNormals(normal_generator->GetOutput()->GetPointData()->GetNormals());
-    }
-
-    if (!mesh_data_->GetCellData()->GetNormals())
-    {
-      mesh_data_->GetCellData()->SetNormals(normal_generator->GetOutput()->GetCellData()->GetNormals());
-    }
-  }
 
   // Use principal component analysis (PCA) to determine the principal axes of the mesh
   Eigen::Vector3d mesh_normal;  // Unit vector along shortest mesh PCA direction
@@ -667,14 +621,6 @@ ToolPaths PlaneSlicerRasterPlanner::planImpl(const pcl::PolygonMesh& mesh) const
     // merging segments
     mergeRasterSegments(raster_lines->GetPoints(), min_hole_size_, raster_ids);
 
-    // rectifying
-    if (rasters_data_vec.size() > 1)
-    {
-      Eigen::Vector3d ref_point;
-      rasters_data_vec.back().raster_segments.front()->GetPoint(0, ref_point.data());  // first point in previous raster
-      rectifyDirection(raster_lines->GetPoints(), ref_point, raster_ids);
-    }
-
     for (auto& rpoint_ids : raster_ids)
     {
       // Populating with points
@@ -686,7 +632,7 @@ ToolPaths PlaneSlicerRasterPlanner::planImpl(const pcl::PolygonMesh& mesh) const
       });
 
       // compute length and add points if segment length is greater than threshold
-      double line_length = computeLength(points);
+      double line_length = ::computeLength(points);
       if (line_length > min_segment_size_ && points->GetNumberOfPoints() > 1)
       {
         // enforce point spacing
@@ -717,6 +663,19 @@ ToolPaths PlaneSlicerRasterPlanner::planImpl(const pcl::PolygonMesh& mesh) const
   // converting to poses msg now
   ToolPaths tool_paths = convertToPoses(rasters_data_vec);
   return tool_paths;
+}
+
+ToolPathPlanner::ConstPtr PlaneSlicerRasterPlannerFactory::create() const
+{
+  auto planner = std::make_unique<PlaneSlicerRasterPlanner>(direction_gen(), origin_gen());
+  planner->setLineSpacing(line_spacing);
+  planner->setPointSpacing(point_spacing);
+  planner->setMinHoleSize(min_hole_size);
+  planner->setSearchRadius(search_radius);
+  planner->setMinSegmentSize(min_segment_size);
+  planner->generateRastersBidirectionally(bidirectional);
+
+  return std::move(planner);
 }
 
 }  // namespace noether

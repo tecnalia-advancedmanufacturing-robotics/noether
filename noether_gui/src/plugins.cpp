@@ -12,6 +12,8 @@
 //   Plane Slicer Raster Planner
 #include <noether_gui/widgets/tool_path_planners/raster/plane_slicer_raster_planner_widget.h>
 #include <noether_gui/widgets/tool_path_planners/raster/cross_hatch_plane_slicer_raster_planner_widget.h>
+//   Edge
+#include <noether_gui/widgets/tool_path_planners/edge/boundary_edge_planner_widget.h>
 // Tool Path Modifiers
 #include <noether_gui/widgets/tool_path_modifiers/circular_lead_in_modifier_widget.h>
 #include <noether_gui/widgets/tool_path_modifiers/circular_lead_out_modifier_widget.h>
@@ -23,13 +25,19 @@
 #include <noether_gui/widgets/tool_path_modifiers/snake_organization_modifier_widget.h>
 #include <noether_gui/widgets/tool_path_modifiers/standard_edge_paths_organization_modifier_widget.h>
 #include <noether_gui/widgets/tool_path_modifiers/tool_drag_orientation_modifier_widget.h>
+#include <noether_gui/widgets/tool_path_modifiers/biased_tool_drag_orientation_modifier_widget.h>
 #include <noether_gui/widgets/tool_path_modifiers/uniform_orientation_modifier_widget.h>
 #include <noether_gui/widgets/tool_path_modifiers/linear_approach_modifier_widget.h>
 #include <noether_gui/widgets/tool_path_modifiers/linear_departure_modifier_widget.h>
 #include <noether_gui/widgets/tool_path_modifiers/offset_modifier_widget.h>
+#include <noether_gui/widgets/tool_path_modifiers/uniform_spacing_spline_modifier_widget.h>
+#include <noether_gui/widgets/tool_path_modifiers/uniform_spacing_linear_modifier_widget.h>
 // Mesh Modifiers
 #include <noether_gui/widgets/mesh_modifiers/plane_projection_modifier_widget.h>
 #include <noether_gui/widgets/mesh_modifiers/euclidean_clustering_modifier_widget.h>
+#include <noether_gui/widgets/mesh_modifiers/normal_estimation_pcl_widget.h>
+#include <noether_gui/widgets/mesh_modifiers/normals_from_mesh_faces_modifier_widget.h>
+#include <noether_gui/widgets/mesh_modifiers/fill_holes_modifier_widget.h>
 
 #include <QWidget>
 #include <QMessageBox>
@@ -89,6 +97,9 @@ using MovingAverageOrientationSmoothingModifierWidgetPlugin =
 using ToolDragOrientationToolPathModifierWidgetPlugin =
     WidgetPluginImpl<ToolDragOrientationToolPathModifierWidget, ToolPathModifierWidget>;
 
+using BiasedToolDragOrientationToolPathModifierWidgetPlugin =
+    WidgetPluginImpl<BiasedToolDragOrientationToolPathModifierWidget, ToolPathModifierWidget>;
+
 using CircularLeadInToolPathModifierWidgetPlugin =
     WidgetPluginImpl<CircularLeadInToolPathModifierWidget, ToolPathModifierWidget>;
 
@@ -104,6 +115,12 @@ using LinearDepartureToolPathModifierWidgetPlugin =
 using ConcatenateModifierWidgetPlugin = WidgetPluginImpl<ConcatenateModifierWidget, ToolPathModifierWidget>;
 
 using OffsetModifierWidgetPlugin = WidgetPluginImpl<OffsetModifierWidget, ToolPathModifierWidget>;
+
+using UniformSpacingSplineModifierWidgetPlugin =
+    WidgetPluginImpl<UniformSpacingSplineModifierWidget, ToolPathModifierWidget>;
+
+using UniformSpacingLinearModifierWidgetPlugin =
+    WidgetPluginImpl<UniformSpacingLinearModifierWidget, ToolPathModifierWidget>;
 
 // Raster Tool Path Planners
 struct PlaneSlicerRasterPlannerWidgetPlugin : ToolPathPlannerWidgetPlugin
@@ -144,10 +161,18 @@ struct CrossHatchPlaneSlicerRasterPlannerWidgetPlugin : ToolPathPlannerWidgetPlu
   }
 };
 
+// Edge Tool Path Planners
+using BoundaryEdgePlannerWidgetPlugin = WidgetPluginImpl<BoundaryEdgePlannerWidget, ToolPathPlannerWidget>;
+
 // Mesh Modifiers
 using PlaneProjectionMeshModifierWidgetPlugin = WidgetPluginImpl<PlaneProjectionMeshModifierWidget, MeshModifierWidget>;
 using EuclideanClusteringMeshModifierWidgetPlugin =
     WidgetPluginImpl<EuclideanClusteringMeshModifierWidget, MeshModifierWidget>;
+using NormalEstimationPCLMeshModifierWidgetPlugin =
+    WidgetPluginImpl<NormalEstimationPCLMeshModifierWidget, MeshModifierWidget>;
+using NormalsFromMeshFacesMeshModifierWidgetPlugin =
+    WidgetPluginImpl<NormalsFromMeshFacesMeshModifierWidget, MeshModifierWidget>;
+using FillHolesModifierWidgetPlugin = WidgetPluginImpl<FillHolesModifierWidget, MeshModifierWidget>;
 
 }  // namespace noether
 
@@ -171,15 +196,24 @@ EXPORT_TOOL_PATH_MODIFIER_WIDGET_PLUGIN(noether::MovingAverageOrientationSmoothi
                                         MovingAverageOrientationSmoothingModifier)
 EXPORT_TOOL_PATH_MODIFIER_WIDGET_PLUGIN(noether::ToolDragOrientationToolPathModifierWidgetPlugin,
                                         ToolDragOrientationToolPathModifier)
+EXPORT_TOOL_PATH_MODIFIER_WIDGET_PLUGIN(noether::BiasedToolDragOrientationToolPathModifierWidgetPlugin,
+                                        BiasedToolDragOrientationToolPathModifier)
 EXPORT_TOOL_PATH_MODIFIER_WIDGET_PLUGIN(noether::CircularLeadInToolPathModifierWidgetPlugin, CircularLeadInModifier)
 EXPORT_TOOL_PATH_MODIFIER_WIDGET_PLUGIN(noether::CircularLeadOutToolPathModifierWidgetPlugin, CircularLeadOutModifier)
 EXPORT_TOOL_PATH_MODIFIER_WIDGET_PLUGIN(noether::LinearApproachToolPathModifierWidgetPlugin, LinearApproachModifier)
 EXPORT_TOOL_PATH_MODIFIER_WIDGET_PLUGIN(noether::LinearDepartureToolPathModifierWidgetPlugin, LinearDepartureModifier)
 EXPORT_TOOL_PATH_MODIFIER_WIDGET_PLUGIN(noether::ConcatenateModifierWidgetPlugin, ConcatenateModifier)
 EXPORT_TOOL_PATH_MODIFIER_WIDGET_PLUGIN(noether::OffsetModifierWidgetPlugin, OffsetModifier)
+EXPORT_TOOL_PATH_MODIFIER_WIDGET_PLUGIN(noether::UniformSpacingSplineModifierWidgetPlugin, UniformSpacingSplineModifier)
+EXPORT_TOOL_PATH_MODIFIER_WIDGET_PLUGIN(noether::UniformSpacingLinearModifierWidgetPlugin,
+                                        UniformSpacingLinearModifier);
 
 EXPORT_TPP_WIDGET_PLUGIN(noether::PlaneSlicerRasterPlannerWidgetPlugin, PlaneSlicerRasterPlanner)
 EXPORT_TPP_WIDGET_PLUGIN(noether::CrossHatchPlaneSlicerRasterPlannerWidgetPlugin, CrossHatchPlaneSlicerRasterPlanner)
+EXPORT_TPP_WIDGET_PLUGIN(noether::BoundaryEdgePlannerWidgetPlugin, BoundaryEdgePlanner)
 
 EXPORT_MESH_MODIFIER_WIDGET_PLUGIN(noether::PlaneProjectionMeshModifierWidgetPlugin, PlaneProjectionModifier)
 EXPORT_MESH_MODIFIER_WIDGET_PLUGIN(noether::EuclideanClusteringMeshModifierWidgetPlugin, EuclideanClusteringModifier)
+EXPORT_MESH_MODIFIER_WIDGET_PLUGIN(noether::NormalEstimationPCLMeshModifierWidgetPlugin, NormalEstimationPCL)
+EXPORT_MESH_MODIFIER_WIDGET_PLUGIN(noether::NormalsFromMeshFacesMeshModifierWidgetPlugin, NormalsFromMeshFaces)
+EXPORT_MESH_MODIFIER_WIDGET_PLUGIN(noether::FillHolesModifierWidgetPlugin, FillHoles)

@@ -32,7 +32,10 @@ add_library(${PROJECT_NAME} SHARED
   src/mesh_modifiers/fill_holes_modifier.cpp
   src/mesh_modifiers/windowed_sinc_smoothing.cpp
   src/mesh_modifiers/plane_projection_modifier.cpp
+  src/mesh_modifiers/normal_estimation_pcl.cpp
+  src/mesh_modifiers/normals_from_mesh_faces_modifier.cpp
   # Tool Path Modifiers
+  src/tool_path_modifiers/biased_tool_drag_orientation_modifier.cpp
   src/tool_path_modifiers/circular_lead_in_modifier.cpp
   src/tool_path_modifiers/circular_lead_out_modifier.cpp
   src/tool_path_modifiers/compound_modifier.cpp
@@ -48,9 +51,12 @@ add_library(${PROJECT_NAME} SHARED
   src/tool_path_modifiers/tool_drag_orientation_modifier.cpp
   src/tool_path_modifiers/uniform_orientation_modifier.cpp
   src/tool_path_modifiers/offset_modifier.cpp
+  src/tool_path_modifiers/uniform_spacing_spline_modifier.cpp
+  src/tool_path_modifiers/uniform_spacing_linear_modifier.cpp
   # Tool Path Planners
   src/tool_path_planners/multi_tool_path_planner.cpp
   src/tool_path_planners/edge/edge_planner.cpp
+  src/tool_path_planners/edge/boundary_edge_planner.cpp
   src/tool_path_planners/raster/raster_planner.cpp
   src/tool_path_planners/raster/origin_generators/aabb_origin_generator.cpp
   src/tool_path_planners/raster/origin_generators/centroid_origin_generator.cpp
@@ -58,7 +64,7 @@ add_library(${PROJECT_NAME} SHARED
   src/tool_path_planners/raster/origin_generators/fixed_origin_generator.cpp
   src/tool_path_planners/raster/direction_generators/fixed_direction_generator.cpp
   src/tool_path_planners/raster/direction_generators/principal_axis_direction_generator.cpp
-    src/tool_path_planners/raster/direction_generators/pca_rotated_direction_generator.cpp
+  src/tool_path_planners/raster/direction_generators/pca_rotated_direction_generator.cpp
   src/tool_path_planners/raster/plane_slicer_raster_planner.cpp
 )
 

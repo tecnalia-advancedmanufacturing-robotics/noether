@@ -41,7 +41,9 @@ add_library(${PROJECT_NAME} SHARED
   src/widgets/tool_path_planners/raster/origin_generators/centroid_origin_generator_widget.cpp
   #   Plane Slicer Tool Path Planner
   src/widgets/tool_path_planners/raster/plane_slicer_raster_planner_widget.cpp
-    src/widgets/tool_path_planners/raster/cross_hatch_plane_slicer_raster_planner.cpp
+  src/widgets/tool_path_planners/raster/cross_hatch_plane_slicer_raster_planner.cpp
+  #   Half Edge Planner
+  src/widgets/tool_path_planners/edge/boundary_edge_planner_widget.cpp
   # Tool Path Modifiers
   src/widgets/tool_path_modifiers/circular_lead_in_modifier_widget.cpp
   src/widgets/tool_path_modifiers/circular_lead_out_modifier_widget.cpp
@@ -55,11 +57,17 @@ add_library(${PROJECT_NAME} SHARED
   src/widgets/tool_path_modifiers/linear_approach_modifier_widget.cpp
   src/widgets/tool_path_modifiers/linear_departure_modifier_widget.cpp
   src/widgets/tool_path_modifiers/tool_drag_orientation_modifier_widget.cpp
+  src/widgets/tool_path_modifiers/biased_tool_drag_orientation_modifier_widget.cpp
   src/widgets/tool_path_modifiers/uniform_orientation_modifier_widget.cpp
   src/widgets/tool_path_modifiers/offset_modifier_widget.cpp
+  src/widgets/tool_path_modifiers/uniform_spacing_spline_modifier_widget.cpp
+  src/widgets/tool_path_modifiers/uniform_spacing_linear_modifier_widget.cpp
   # Mesh Modifiers
   src/widgets/mesh_modifiers/plane_projection_modifier_widget.cpp
   src/widgets/mesh_modifiers/euclidean_clustering_modifier_widget.cpp
+  src/widgets/mesh_modifiers/normal_estimation_pcl_widget.cpp
+  src/widgets/mesh_modifiers/normals_from_mesh_faces_modifier_widget.cpp
+  src/widgets/mesh_modifiers/fill_holes_modifier_widget.cpp
   # Resources
   resources/resource.qrc
 )
@@ -89,7 +97,7 @@ target_code_coverage(${PROJECT_NAME} INTERFACE ALL ENABLE ${NOETHER_ENABLE_TESTI
 # Plugin Implementation Library
 add_library(${PROJECT_NAME}_plugins SHARED
   src/plugins.cpp)
-target_link_libraries(${PROJECT_NAME}_plugins PUBLIC ${PROJECT_NAME} Qt5::Widgets)
+target_link_libraries(${PROJECT_NAME}_plugins PUBLIC ${PROJECT_NAME} Qt5::Widgets yaml-cpp)
 target_compile_definitions(${PROJECT_NAME}_plugins PRIVATE NOETHER_GUI_PLUGINS="${PROJECT_NAME}_plugins")
 target_cxx_version(${PROJECT_NAME}_plugins PUBLIC VERSION 14)
 target_clang_tidy(${PROJECT_NAME}_plugins
@@ -100,7 +108,7 @@ target_code_coverage(${PROJECT_NAME}_plugins INTERFACE ALL ENABLE ${NOETHER_ENAB
 
 # TPP Application
 add_executable(${PROJECT_NAME}_app src/tpp_app.cpp)
-target_link_libraries(${PROJECT_NAME}_app PRIVATE ${PROJECT_NAME} Boost::program_options)
+target_link_libraries(${PROJECT_NAME}_app PRIVATE ${PROJECT_NAME} Boost::program_options yaml-cpp)
 target_compile_definitions(${PROJECT_NAME}_app PRIVATE NOETHER_GUI_PLUGINS="${PROJECT_NAME}_plugins")
 
 # Install headers
