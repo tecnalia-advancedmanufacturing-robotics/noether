@@ -72,54 +72,6 @@ double computeLength(const vtkSmartPointer<vtkPoints>& points)
   return total_length;
 }
 
-vtkSmartPointer<vtkPoints> applyParametricSpline(const vtkSmartPointer<vtkPoints>& points,
-                                                 double total_length,
-                                                 double point_spacing)
-{
-  vtkSmartPointer<vtkPoints> new_points = vtkSmartPointer<vtkPoints>::New();
-
-  // create spline
-  vtkSmartPointer<vtkParametricSpline> spline = vtkSmartPointer<vtkParametricSpline>::New();
-  spline->SetPoints(points);
-  spline->SetParameterizeByLength(true);
-  spline->ClosedOff();
-
-  // adding first point
-  Eigen::Vector3d pt_prev;
-  points->GetPoint(0, pt_prev.data());
-  new_points->InsertNextPoint(pt_prev.data());
-
-  // adding remaining points by evaluating spline
-  std::size_t num_points = static_cast<std::size_t>(std::ceil(total_length / point_spacing) + 1);
-  double du[9];
-  Eigen::Vector3d u, pt;
-  for (unsigned i = 1; i < num_points; i++)
-  {
-    double interv = static_cast<double>(i) / static_cast<double>(num_points - 1);
-    interv = interv > 1.0 ? 1.0 : interv;
-    if (std::abs(interv - 1.0) < EPSILON)
-    {
-      break;  // reach end
-    }
-
-    u = interv * Eigen::Vector3d::Ones();
-    std::tie(u[0], u[1], u[2]) = std::make_tuple(interv, interv, interv);
-    spline->Evaluate(u.data(), pt.data(), du);
-
-    // check distance
-    if ((pt - pt_prev).norm() >= point_spacing)
-    {
-      new_points->InsertNextPoint(pt.data());
-      pt_prev = pt;
-    }
-  }
-
-  // add last point
-  points->GetPoint(points->GetNumberOfPoints() - 1, pt_prev.data());
-  new_points->InsertNextPoint(pt_prev.data());
-
-  return new_points;
-}
 
 /**
  * @brief removes points that appear in multiple lists such that only one instance of that point
@@ -636,11 +588,10 @@ ToolPaths PlaneSlicerRasterPlanner::planImpl(const pcl::PolygonMesh& mesh) const
       if (line_length > min_segment_size_ && points->GetNumberOfPoints() > 1)
       {
         // enforce point spacing
-        vtkSmartPointer<vtkPoints> new_points = applyParametricSpline(points, line_length, point_spacing_);
 
         // add points to segment now
         vtkSmartPointer<vtkPolyData> segment_data = vtkSmartPointer<vtkPolyData>::New();
-        segment_data->SetPoints(new_points);
+        segment_data->SetPoints(points);
 
         // inserting normals
         if (!insertNormals(search_radius_, mesh_data_, kd_tree_, segment_data))
@@ -669,7 +620,6 @@ ToolPathPlanner::ConstPtr PlaneSlicerRasterPlannerFactory::create() const
 {
   auto planner = std::make_unique<PlaneSlicerRasterPlanner>(direction_gen(), origin_gen());
   planner->setLineSpacing(line_spacing);
-  planner->setPointSpacing(point_spacing);
   planner->setMinHoleSize(min_hole_size);
   planner->setSearchRadius(search_radius);
   planner->setMinSegmentSize(min_segment_size);
