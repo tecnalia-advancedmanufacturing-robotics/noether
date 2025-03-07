@@ -37,7 +37,7 @@ std::vector<ToolPaths> ToolPathPlannerPipeline::plan(pcl::PolygonMesh original_m
     catch (const std::exception& ex)
     {
       std::stringstream ss;
-      ss << "Error invoking tool path planner on mesh at index " << i << " in TPP pipeline.";
+      ss << "Error invoking tool path planner on mesh at index " << i << " in TPP pipeline." << ex.what();
       std::throw_with_nested(std::runtime_error(ss.str()));
     }
 
