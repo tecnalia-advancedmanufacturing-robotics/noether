@@ -74,6 +74,47 @@ double computeLength(const vtkSmartPointer<vtkPoints>& points)
 }
 
 
+vtkSmartPointer<vtkPoints> enforcePointSpacing(const vtkSmartPointer<vtkPoints>& points,
+                                               double total_length,
+                                               double point_spacing)
+{
+  vtkSmartPointer<vtkPoints> new_points = vtkSmartPointer<vtkPoints>::New();
+
+  Eigen::Vector3d a, b, current_vector;
+  int i = 0;
+  points->GetPoint(i, a.data());
+  points->GetPoint(i + 1, b.data());
+  double current_distance = (a - b).norm();
+  current_vector = (b - a).normalized();
+  double previous_distances = 0;
+
+  new_points->InsertNextPoint(a.data());
+
+  double adjusted_point_spacing = total_length / std::ceil(total_length / point_spacing);
+
+  for (double desired_distance = point_spacing; desired_distance < total_length;
+       desired_distance += adjusted_point_spacing)
+  {
+    while (desired_distance > previous_distances + current_distance)
+    {
+      previous_distances += current_distance;
+      i += 1;
+      points->GetPoint(i, a.data());
+      points->GetPoint(i + 1, b.data());
+      current_distance = (b - a).norm();
+      current_vector = (b - a).normalized();
+    }
+    Eigen::Vector3d np = a + current_vector * (desired_distance - previous_distances);
+    new_points->InsertNextPoint(np.data());
+  }
+
+  // add last point
+  points->GetPoint(points->GetNumberOfPoints() - 1, b.data());
+  new_points->InsertNextPoint(b.data());
+
+  return new_points;
+}
+
 /**
  * @brief removes points that appear in multiple lists such that only one instance of that point
  *        index remains
@@ -626,10 +667,11 @@ ToolPaths PlaneSlicerRasterPlanner::planImpl(const pcl::PolygonMesh& mesh) const
       if (line_length > min_segment_size_ && points->GetNumberOfPoints() > 1)
       {
         // enforce point spacing
+        vtkSmartPointer<vtkPoints> new_points = enforcePointSpacing(points, line_length, point_spacing_);
 
         // add points to segment now
         vtkSmartPointer<vtkPolyData> segment_data = vtkSmartPointer<vtkPolyData>::New();
-        segment_data->SetPoints(points);
+        segment_data->SetPoints(new_points);
 
         // inserting normals
         if (!insertNormals(search_radius_, mesh_data_, kd_tree_, segment_data, cell_locator_))
@@ -658,6 +700,7 @@ ToolPathPlanner::ConstPtr PlaneSlicerRasterPlannerFactory::create() const
 {
   auto planner = std::make_unique<PlaneSlicerRasterPlanner>(direction_gen(), origin_gen());
   planner->setLineSpacing(line_spacing);
+  planner->setPointSpacing(point_spacing);
   planner->setMinHoleSize(min_hole_size);
   planner->setSearchRadius(search_radius);
   planner->setMinSegmentSize(min_segment_size);
