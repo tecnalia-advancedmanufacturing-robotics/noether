@@ -32,7 +32,7 @@ else()
   include(${VTK_USE_FILE})
 endif()
 
-find_package(PCL REQUIRED COMPONENTS IO)
+find_package(PCL)
 if(PCL_FOUND AND "${PCL_VERSION}" VERSION_LESS 1.9)
   message(WARNING
     "The minimum required version of PCL is 1.9, but found ${PCL_VERSION} in path first. Checking for exactly 1.9")
