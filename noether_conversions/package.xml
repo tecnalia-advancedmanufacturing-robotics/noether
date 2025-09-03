@@ -14,7 +14,7 @@
   <depend>tf2_eigen</depend>
   <depend>noether_msgs</depend>
   <depend>libpcl-all-dev</depend>
-  <depend>libvtk</depend>
+  <depend>libvtk9-dev</depend>
   <depend>shape_msgs</depend>
   <depend>visualization_msgs</depend>
   <export>
