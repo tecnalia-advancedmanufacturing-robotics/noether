@@ -670,6 +670,22 @@ ToolPaths PlaneSlicerRasterPlanner::planImpl(const pcl::PolygonMesh& mesh) const
         points->InsertNextPoint(p.data());
       });
 
+      // If points are not aligned with cut_direction, reverse them
+      Eigen::Vector3d p0, p1;
+      points->GetPoint(0, p0.data());
+      points->GetPoint(points->GetNumberOfPoints() - 1, p1.data());
+      if ((p1 - p0).dot(cut_direction) < 0)
+      {
+        vtkSmartPointer<vtkPoints> reversed_points = vtkSmartPointer<vtkPoints>::New();
+        for (vtkIdType pi = points->GetNumberOfPoints() - 1; pi >= 0; pi--)
+        {
+          std::array<double, 3> p;
+          points->GetPoint(pi, p.data());
+          reversed_points->InsertNextPoint(p.data());
+        }
+        points = reversed_points;
+      }
+
       // compute length and add points if segment length is greater than threshold
       double line_length = ::computeLength(points);
       if (line_length > min_segment_size_ && points->GetNumberOfPoints() > 1)
