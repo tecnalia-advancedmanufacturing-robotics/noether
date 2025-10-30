@@ -135,7 +135,7 @@ visualization_msgs::Marker createMeshMarker(const std::string& mesh_file,
   m.lifetime = ros::Duration(0);
   std::tie(m.scale.x, m.scale.y, m.scale.z) = std::make_tuple(1.0, 1.0, 1.0);
   m.mesh_resource = "file://" + mesh_file;
-  m.frame_locked = true;
+  m.frame_locked = false;
   m.type = m.MESH_RESOURCE;
   return m;
 }
@@ -223,7 +223,7 @@ visualization_msgs::MarkerArray convertToAxisMarkers(const noether_msgs::ToolPat
     marker.header.frame_id = frame_id;
     marker.type = marker.CYLINDER;
     marker.id = id;
-    marker.frame_locked = true;
+    marker.frame_locked = false;
     marker.lifetime = ros::Duration(0);
     marker.ns = ns;
     std::tie(marker.scale.x, marker.scale.y, marker.scale.z) = std::make_tuple(axis_scale, axis_scale, axis_length);
@@ -287,7 +287,7 @@ convertToArrowMarkers(const noether_msgs::ToolPaths& toolpaths,
   arrow_marker.header.frame_id = frame_id;
   arrow_marker.type = arrow_marker.ARROW;
   arrow_marker.id = start_id;
-  arrow_marker.frame_locked = true;
+  arrow_marker.frame_locked = false;
   arrow_marker.lifetime = ros::Duration(0);
   arrow_marker.ns = ns;
   std::tie(arrow_marker.scale.x, arrow_marker.scale.y, arrow_marker.scale.z) =
@@ -363,7 +363,7 @@ convertToDottedLineMarker(const noether_msgs::ToolPaths& toolpaths,
   line_marker.header.frame_id = frame_id;
   line_marker.type = line_marker.LINE_STRIP;
   line_marker.id = start_id;
-  line_marker.frame_locked = true;
+  line_marker.frame_locked = false;
   line_marker.lifetime = ros::Duration(0);
   line_marker.ns = ns;
   std::tie(line_marker.scale.x, line_marker.scale.y, line_marker.scale.z) = std::make_tuple(line_width, 0.0, 0.0);
