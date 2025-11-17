@@ -1,6 +1,6 @@
 /**
  * @author Jorge Nicho <jrgnichodevel@gmail.com>
- * @file clean_data.h
+ * @file clean_data_modifier.h
  * @date Dec 6, 2019
  * @copyright Copyright (c) 2019, Southwest Research Institute
  *
@@ -22,6 +22,7 @@
 #pragma once
 
 #include <noether_tpp/core/mesh_modifier.h>
+#include <noether_tpp/macros.h>
 
 namespace noether
 {
@@ -34,7 +35,10 @@ namespace noether
 class CleanData : public MeshModifier
 {
 public:
+  using MeshModifier::MeshModifier;
   std::vector<pcl::PolygonMesh> modify(const pcl::PolygonMesh& mesh) const override;
 };
 
 }  // namespace noether
+
+FWD_DECLARE_YAML_CONVERT(noether::CleanData)

@@ -1,5 +1,6 @@
 #include <noether_tpp/tool_path_modifiers/biased_tool_drag_orientation_modifier.h>
 #include <noether_tpp/utils.h>
+#include <noether_tpp/serialization.h>
 
 namespace noether
 {
@@ -34,3 +35,27 @@ ToolPaths BiasedToolDragOrientationToolPathModifier::modify(ToolPaths tool_paths
 }
 
 }  // namespace noether
+
+namespace YAML
+{
+/** @cond */
+Node convert<noether::BiasedToolDragOrientationToolPathModifier>::encode(
+    const noether::BiasedToolDragOrientationToolPathModifier& val)
+{
+  Node node;
+  node["angle_offset"] = val.angle_offset_;
+  node["tool_radius"] = val.tool_radius_;
+  return node;
+}
+
+bool convert<noether::BiasedToolDragOrientationToolPathModifier>::decode(
+    const Node& node,
+    noether::BiasedToolDragOrientationToolPathModifier& val)
+{
+  val.angle_offset_ = getMember<double>(node, "angle_offset");
+  val.tool_radius_ = getMember<double>(node, "tool_radius");
+  return true;
+}
+/** @endcond */
+
+}  // namespace YAML

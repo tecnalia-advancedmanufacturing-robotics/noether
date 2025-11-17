@@ -6,70 +6,21 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>327</width>
-    <height>319</height>
+    <width>417</width>
+    <height>337</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>MainWindow</string>
   </property>
-  <widget class="QWidget" name="centralwidget">
-   <layout class="QVBoxLayout" name="verticalLayout_2">
-    <item>
-     <widget class="QSplitter" name="splitter">
-      <property name="orientation">
-       <enum>Qt::Horizontal</enum>
-      </property>
-      <widget class="QWidget" name="verticalLayoutWidget">
-       <layout class="QVBoxLayout" name="verticalLayout">
-        <item>
-         <widget class="QWidget" name="widget" native="true"/>
-        </item>
-        <item>
-         <widget class="QGroupBox" name="groupBox">
-          <property name="title">
-           <string>View</string>
-          </property>
-          <layout class="QFormLayout" name="formLayout">
-           <item row="0" column="0">
-            <widget class="QLabel" name="label">
-             <property name="text">
-              <string>Axis size (m)</string>
-             </property>
-            </widget>
-           </item>
-           <item row="0" column="1">
-            <widget class="QDoubleSpinBox" name="double_spin_box_axis_size">
-             <property name="decimals">
-              <number>3</number>
-             </property>
-             <property name="maximum">
-              <double>1.000000000000000</double>
-             </property>
-             <property name="singleStep">
-              <double>0.010000000000000</double>
-             </property>
-             <property name="value">
-              <double>0.025000000000000</double>
-             </property>
-            </widget>
-           </item>
-          </layout>
-         </widget>
-        </item>
-       </layout>
-      </widget>
-     </widget>
-    </item>
-   </layout>
-  </widget>
+  <widget class="QWidget" name="centralwidget"/>
   <widget class="QMenuBar" name="menubar">
    <property name="geometry">
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>327</width>
-     <height>22</height>
+     <width>417</width>
+     <height>23</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuFile">
@@ -83,8 +34,12 @@
      <bool>true</bool>
     </property>
     <addaction name="action_load_mesh"/>
+    <addaction name="separator"/>
     <addaction name="action_load_config"/>
     <addaction name="action_save_config"/>
+    <addaction name="separator"/>
+    <addaction name="action_save_modified_mesh"/>
+    <addaction name="action_save_toolpath"/>
    </widget>
    <widget class="QMenu" name="menuView">
     <property name="tearOffEnabled">
@@ -171,21 +126,103 @@
    <addaction name="action_save_config"/>
    <addaction name="separator"/>
    <addaction name="action_execute_pipeline"/>
+   <addaction name="separator"/>
+   <addaction name="action_save_modified_mesh"/>
+   <addaction name="action_save_toolpath"/>
   </widget>
-  <action name="action_load_mesh">
-   <property name="icon">
-    <iconset theme="document-open"/>
+  <widget class="QDockWidget" name="dock">
+   <property name="features">
+    <set>QDockWidget::DockWidgetFloatable|QDockWidget::DockWidgetMovable</set>
    </property>
-   <property name="text">
-    <string>Load mesh...</string>
+   <property name="allowedAreas">
+    <set>Qt::LeftDockWidgetArea|Qt::RightDockWidgetArea</set>
    </property>
-   <property name="toolTip">
-    <string>Load mesh from file...</string>
+   <property name="windowTitle">
+    <string>Tool Path Planning Pipeline</string>
    </property>
-   <property name="shortcut">
-    <string>Ctrl+O</string>
-   </property>
-  </action>
+   <attribute name="dockWidgetArea">
+    <number>1</number>
+   </attribute>
+   <widget class="QWidget" name="dockWidgetContents">
+    <layout class="QVBoxLayout" name="verticalLayout">
+     <item>
+      <widget class="QWidget" name="widget" native="true"/>
+     </item>
+     <item>
+      <widget class="QGroupBox" name="groupBox">
+       <property name="title">
+        <string>View</string>
+       </property>
+       <layout class="QFormLayout" name="formLayout">
+        <item row="0" column="0">
+         <widget class="QLabel" name="label">
+          <property name="text">
+           <string>Axis size</string>
+          </property>
+         </widget>
+        </item>
+        <item row="0" column="1">
+         <widget class="noether::DistanceDoubleSpinBox" name="double_spin_box_axis_size">
+          <property name="decimals">
+           <number>3</number>
+          </property>
+          <property name="maximum">
+           <double>1.000000000000000</double>
+          </property>
+          <property name="singleStep">
+           <double>0.010000000000000</double>
+          </property>
+          <property name="value">
+           <double>0.025000000000000</double>
+          </property>
+         </widget>
+        </item>
+        <item row="2" column="0">
+         <widget class="QLabel" name="label_2">
+          <property name="text">
+           <string>Show origin</string>
+          </property>
+         </widget>
+        </item>
+        <item row="2" column="1">
+         <widget class="QCheckBox" name="check_box_show_axes">
+          <property name="text">
+           <string/>
+          </property>
+          <property name="checked">
+           <bool>true</bool>
+          </property>
+         </widget>
+        </item>
+        <item row="1" column="1">
+         <widget class="noether::DistanceDoubleSpinBox" name="double_spin_box_origin_size">
+          <property name="decimals">
+           <number>3</number>
+          </property>
+          <property name="maximum">
+           <double>1.000000000000000</double>
+          </property>
+          <property name="singleStep">
+           <double>0.010000000000000</double>
+          </property>
+          <property name="value">
+           <double>0.025000000000000</double>
+          </property>
+         </widget>
+        </item>
+        <item row="1" column="0">
+         <widget class="QLabel" name="label_3">
+          <property name="text">
+           <string>Origin size</string>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </widget>
+     </item>
+    </layout>
+   </widget>
+  </widget>
   <action name="action_load_config">
    <property name="icon">
     <iconset theme="document-properties"/>
@@ -265,20 +302,6 @@
     <string>Ctrl+T</string>
    </property>
   </action>
-  <action name="action_execute_pipeline">
-   <property name="icon">
-    <iconset theme="media-playback-start"/>
-   </property>
-   <property name="text">
-    <string>Plan</string>
-   </property>
-   <property name="toolTip">
-    <string>Plan tool path</string>
-   </property>
-   <property name="shortcut">
-    <string>Ctrl+P</string>
-   </property>
-  </action>
   <action name="action_save_config">
    <property name="icon">
     <iconset theme="document-save"/>
@@ -290,7 +313,7 @@
     <string>Save TPP configuration...</string>
    </property>
    <property name="shortcut">
-    <string>Ctrl+S</string>
+    <string>Ctrl+Alt+S</string>
    </property>
   </action>
   <action name="action_show_unmodified_tool_path_lines">
@@ -324,7 +347,67 @@
     <string>Ctrl+L</string>
    </property>
   </action>
+  <action name="action_load_mesh">
+   <property name="icon">
+    <iconset theme="document-open"/>
+   </property>
+   <property name="text">
+    <string>Load mesh...</string>
+   </property>
+   <property name="toolTip">
+    <string>Load mesh from file...</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+O</string>
+   </property>
+  </action>
+  <action name="action_save_modified_mesh">
+   <property name="icon">
+    <iconset theme="applications-accessories"/>
+   </property>
+   <property name="text">
+    <string>Save modified mesh(es)...</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+D</string>
+   </property>
+  </action>
+  <action name="action_execute_pipeline">
+   <property name="icon">
+    <iconset theme="media-playback-start"/>
+   </property>
+   <property name="text">
+    <string>Plan</string>
+   </property>
+   <property name="toolTip">
+    <string>Plan tool path</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+P</string>
+   </property>
+  </action>
+  <action name="action_save_toolpath">
+   <property name="icon">
+    <iconset theme="document-save-as"/>
+   </property>
+   <property name="text">
+    <string>Save Tool Path...</string>
+   </property>
+   <property name="toolTip">
+    <string>Save tool path to YAML file</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+S</string>
+   </property>
+  </action>
  </widget>
+ <customwidgets>
+  <customwidget>
+   <class>noether::DistanceDoubleSpinBox</class>
+   <extends>QDoubleSpinBox</extends>
+   <header location="global">noether_gui/widgets/distance_double_spin_box.h</header>
+  </customwidget>
+ </customwidgets>
  <resources/>
  <connections/>
 </ui>

@@ -1,6 +1,6 @@
 /**
  * @author Jorge Nicho <jrgnichodevel@gmail.com>
- * @file fill_holes.pp
+ * @file fill_holes_modifier.cpp
  * @date Dec 16, 2019
  * @copyright Copyright (c) 2019, Southwest Research Institute
  *
@@ -20,10 +20,11 @@
  */
 
 #include <noether_tpp/mesh_modifiers/fill_holes_modifier.h>
+#include <noether_tpp/serialization.h>
 
 #include <vtkFillHolesFilter.h>
 #include <vtkPolyDataNormals.h>
-#include <pcl/surface/vtk_smoothing/vtk_utils.h>
+#include <pcl/io/vtk_lib_io.h>
 
 namespace noether
 {
@@ -32,7 +33,7 @@ FillHoles::FillHoles(const double max_hole_size) : max_hole_size_(max_hole_size)
 std::vector<pcl::PolygonMesh> FillHoles::modify(const pcl::PolygonMesh& mesh_in) const
 {
   vtkSmartPointer<vtkPolyData> mesh_data = vtkSmartPointer<vtkPolyData>::New();
-  pcl::VTKUtils::mesh2vtk(mesh_in, mesh_data);
+  pcl::io::mesh2vtk(mesh_in, mesh_data);
 
   vtkSmartPointer<vtkFillHolesFilter> fill_holes_filter = vtkSmartPointer<vtkFillHolesFilter>::New();
   fill_holes_filter->SetInputData(mesh_data);
@@ -46,8 +47,27 @@ std::vector<pcl::PolygonMesh> FillHoles::modify(const pcl::PolygonMesh& mesh_in)
   normals_rectifier->Update();
 
   pcl::PolygonMesh mesh_out;
-  pcl::VTKUtils::vtk2mesh(normals_rectifier->GetOutput(), mesh_out);
+  pcl::io::vtk2mesh(normals_rectifier->GetOutput(), mesh_out);
   return { mesh_out };
 }
 
 }  // namespace noether
+
+namespace YAML
+{
+/** @cond */
+Node convert<noether::FillHoles>::encode(const noether::FillHoles& val)
+{
+  Node node;
+  node["max_hole_size"] = val.max_hole_size_;
+  return node;
+}
+
+bool convert<noether::FillHoles>::decode(const Node& node, noether::FillHoles& val)
+{
+  val.max_hole_size_ = getMember<double>(node, "max_hole_size");
+  return true;
+}
+/** @endcond */
+
+}  // namespace YAML

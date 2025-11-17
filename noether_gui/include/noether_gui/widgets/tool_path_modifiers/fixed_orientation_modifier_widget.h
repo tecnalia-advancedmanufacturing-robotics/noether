@@ -2,8 +2,6 @@
 
 #include <noether_gui/widgets.h>
 
-#include <noether_tpp/core/tool_path_modifier.h>
-
 namespace Ui
 {
 class Vector3dEditor;
@@ -11,11 +9,13 @@ class Vector3dEditor;
 
 namespace noether
 {
-class FixedOrientationModifierWidget : public ToolPathModifierWidget
+/**
+ * @ingroup gui_widgets_tool_path_modifiers
+ */
+class FixedOrientationModifierWidget : public BaseWidget
 {
 public:
   FixedOrientationModifierWidget(QWidget* parent = nullptr);
-  ToolPathModifier::ConstPtr create() const override;
 
   void configure(const YAML::Node&) override;
   void save(YAML::Node&) const override;

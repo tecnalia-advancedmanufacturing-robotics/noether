@@ -1,7 +1,8 @@
-#include <noether_tpp/tool_path_planners/raster/origin_generators/aabb_origin_generator.h>
+#include <noether_tpp/tool_path_planners/raster/origin_generators/aabb_center_origin_generator.h>
 
 #include <pcl/common/common.h>
 #include <pcl/conversions.h>
+#include <yaml-cpp/yaml.h>
 
 namespace noether
 {
@@ -16,3 +17,16 @@ Eigen::Vector3d AABBCenterOriginGenerator::generate(const pcl::PolygonMesh& mesh
 }
 
 }  // namespace noether
+
+namespace YAML
+{
+/** @cond */
+Node convert<noether::AABBCenterOriginGenerator>::encode(const noether::AABBCenterOriginGenerator& val) { return {}; }
+
+bool convert<noether::AABBCenterOriginGenerator>::decode(const Node& node, noether::AABBCenterOriginGenerator& val)
+{
+  return true;
+}
+/** @endcond */
+
+}  // namespace YAML

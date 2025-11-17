@@ -1,5 +1,6 @@
 #include <noether_tpp/tool_path_modifiers/offset_modifier.h>
 #include <noether_tpp/utils.h>
+#include <noether_tpp/serialization.h>
 
 namespace noether
 {
@@ -22,3 +23,22 @@ ToolPaths OffsetModifier::modify(ToolPaths tool_paths) const
 }
 
 }  // namespace noether
+
+namespace YAML
+{
+/** @cond */
+Node convert<noether::OffsetModifier>::encode(const noether::OffsetModifier& val)
+{
+  Node node;
+  node["offset"] = val.offset_;
+  return node;
+}
+
+bool convert<noether::OffsetModifier>::decode(const Node& node, noether::OffsetModifier& val)
+{
+  val.offset_ = getMember<Eigen::Isometry3d>(node, "offset");
+  return true;
+}
+/** @endcond */
+
+}  // namespace YAML

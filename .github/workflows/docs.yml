@@ -5,6 +5,7 @@ on:
     branches:
       - master
       - dev
+  pull_request:
   workflow_dispatch:
 
 # Sets permissions of the GITHUB_TOKEN to allow deployment to GitHub Pages
@@ -22,6 +23,10 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
+    container:
+      image: ubuntu:24.04
+      env:
+        DEBIAN_FRONTEND: noninteractive
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -32,8 +37,8 @@ jobs:
       - name: Run Doxygen
         working-directory: docs
         run: |
-          sudo apt update
-          sudo apt install -y -qq doxygen graphviz
+          apt update -y -qq
+          apt install -y -qq doxygen graphviz
           doxygen Doxyfile
           touch build/html/.nojekyll
 
@@ -43,6 +48,7 @@ jobs:
           path: docs/build/html
 
   deploy:
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
     needs: build
     environment:
       name: github-pages

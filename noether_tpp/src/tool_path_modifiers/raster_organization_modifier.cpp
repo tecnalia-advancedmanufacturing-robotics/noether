@@ -1,5 +1,6 @@
 #include <noether_tpp/tool_path_modifiers/raster_organization_modifier.h>
 #include <noether_tpp/utils.h>
+#include <noether_tpp/serialization.h>
 
 #include <numeric>
 
@@ -49,3 +50,16 @@ ToolPaths RasterOrganizationModifier::modify(ToolPaths tool_paths) const
 }
 
 }  // namespace noether
+
+namespace YAML
+{
+/** @cond */
+Node convert<noether::RasterOrganizationModifier>::encode(const noether::RasterOrganizationModifier& val) { return {}; }
+
+bool convert<noether::RasterOrganizationModifier>::decode(const Node& node, noether::RasterOrganizationModifier& val)
+{
+  return true;
+}
+/** @endcond */
+
+}  // namespace YAML

@@ -1,5 +1,6 @@
 #include <noether_tpp/tool_path_modifiers/uniform_spacing_spline_modifier.h>
 #include <noether_tpp/utils.h>
+#include <noether_tpp/serialization.h>
 
 #include <vtkParametricSpline.h>
 #include <vtkPoints.h>
@@ -126,3 +127,23 @@ ToolPaths UniformSpacingSplineModifier::modify(ToolPaths tool_paths) const
 }
 
 }  // namespace noether
+
+namespace YAML
+{
+/** @cond */
+Node convert<noether::UniformSpacingSplineModifier>::encode(const noether::UniformSpacingSplineModifier& val)
+{
+  Node node;
+  node["point_spacing"] = val.point_spacing_;
+  return node;
+}
+
+bool convert<noether::UniformSpacingSplineModifier>::decode(const Node& node,
+                                                            noether::UniformSpacingSplineModifier& val)
+{
+  val.point_spacing_ = getMember<double>(node, "point_spacing");
+  return true;
+}
+/** @endcond */
+
+}  // namespace YAML

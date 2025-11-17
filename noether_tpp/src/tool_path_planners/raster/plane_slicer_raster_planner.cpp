@@ -11,7 +11,7 @@
 #include <pcl/common/common.h>  // pcl::getMinMax3d()
 #include <pcl/common/pca.h>     // pcl::PCA
 #include <pcl/conversions.h>    // pcl::fromPCLPointCloud2
-#include <pcl/surface/vtk_smoothing/vtk_utils.h>
+#include <pcl/io/vtk_lib_io.h>
 #include <vtkAppendPolyData.h>
 #include <vtkCellArray.h>
 #include <vtkCellData.h>
@@ -29,9 +29,6 @@
 #include <vtkGenericCell.h>
 #include <vtkSmartPointer.h>
 #include <vtkStripper.h>
-#ifndef VTK_MAJOR_VERSION
-#include <vtkVersionMacros.h>
-#endif
 
 namespace
 {
@@ -467,7 +464,7 @@ ToolPaths PlaneSlicerRasterPlanner::planImpl(const pcl::PolygonMesh& mesh) const
 
   // Convert input mesh to VTK type & calculate normals if necessary
   vtkSmartPointer<vtkPolyData> mesh_data_ = vtkSmartPointer<vtkPolyData>::New();
-  pcl::VTKUtils::mesh2vtk(mesh, mesh_data_);
+  pcl::io::mesh2vtk(mesh, mesh_data_);
   mesh_data_->BuildLinks();
   mesh_data_->BuildCells();
     if (!mesh_data_->GetPointData()->GetNormals() || !mesh_data_->GetCellData()->GetNormals())
@@ -608,11 +605,7 @@ ToolPaths PlaneSlicerRasterPlanner::planImpl(const pcl::PolygonMesh& mesh) const
 
     // collecting raster segments based on min hole size
     vtkSmartPointer<vtkPolyData> raster_lines = raster_data->GetInput(i);
-#if VTK_MAJOR_VERSION > 7
     const vtkIdType* indices;
-#else
-    vtkIdType* indices;
-#endif
     vtkIdType num_points;
     vtkIdType num_lines = raster_lines->GetNumberOfLines();
     vtkCellArray* cells = raster_lines->GetLines();

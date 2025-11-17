@@ -4,18 +4,21 @@
 
 namespace noether
 {
+class AngleDoubleSpinBox;
+
+/**
+ * @ingroup gui_widgets_tool_path_planners
+ */
 class CrossHatchPlaneSlicerRasterPlannerWidget : public PlaneSlicerRasterPlannerWidget
 {
 public:
-  CrossHatchPlaneSlicerRasterPlannerWidget(boost_plugin_loader::PluginLoader&& loader, QWidget* parent = nullptr);
-
-  ToolPathPlanner::ConstPtr create() const override;
+  CrossHatchPlaneSlicerRasterPlannerWidget(std::shared_ptr<const WidgetFactory> factory, QWidget* parent = nullptr);
 
   void configure(const YAML::Node&) override;
   void save(YAML::Node&) const override;
 
 private:
-  QDoubleSpinBox* cross_hatch_angle_;
+  AngleDoubleSpinBox* cross_hatch_angle_;
 };
 
 }  // namespace noether

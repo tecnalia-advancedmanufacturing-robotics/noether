@@ -1,6 +1,6 @@
 /**
  * @author Jorge Nicho <jrgnichodevel@gmail.com>
- * @file euclidean_clustering.cpp
+ * @file euclidean_clustering_modifier.cpp
  * @date Nov 26, 2019
  * @copyright Copyright (c) 2019, Southwest Research Institute
  *
@@ -20,6 +20,7 @@
  */
 #include <noether_tpp/mesh_modifiers/euclidean_clustering_modifier.h>
 #include <noether_tpp/mesh_modifiers/subset_extraction/subset_extractor.h>
+#include <noether_tpp/serialization.h>
 
 #include <pcl/point_types.h>
 #include <pcl/filters/extract_indices.h>
@@ -62,3 +63,27 @@ std::vector<pcl::PolygonMesh> EuclideanClusteringMeshModifier::modify(const pcl:
 }
 
 }  // namespace noether
+
+namespace YAML
+{
+/** @cond */
+Node convert<noether::EuclideanClusteringMeshModifier>::encode(const noether::EuclideanClusteringMeshModifier& val)
+{
+  Node node;
+  node["tolerance"] = val.tolerance_;
+  node["min_cluster_size"] = val.min_cluster_size_;
+  node["max_cluster_size"] = val.max_cluster_size_;
+  return node;
+}
+
+bool convert<noether::EuclideanClusteringMeshModifier>::decode(const Node& node,
+                                                               noether::EuclideanClusteringMeshModifier& val)
+{
+  val.tolerance_ = getMember<double>(node, "tolerance");
+  val.min_cluster_size_ = getMember<int>(node, "min_cluster_size");
+  val.max_cluster_size_ = getMember<int>(node, "max_cluster_size");
+  return true;
+}
+/** @endcond */
+
+}  // namespace YAML
