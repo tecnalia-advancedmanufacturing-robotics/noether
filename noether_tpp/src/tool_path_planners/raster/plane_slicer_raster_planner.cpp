@@ -325,49 +325,54 @@ bool insertNormals(const double search_radius,
     // locate closest cell
     Eigen::Vector3d query_point;
     data->GetPoints()->GetPoint(i, query_point.data());
-
+    vtkSmartPointer<vtkIdList> id_list = vtkSmartPointer<vtkIdList>::New();
     if (search_radius > 0.0)
     {
-      vtkSmartPointer<vtkIdList> id_list = vtkSmartPointer<vtkIdList>::New();
-      kd_tree_->FindPointsWithinRadius(search_radius, query_point.data(), id_list);
-      if (id_list->GetNumberOfIds() < 1)
+      // Create AABB around query point
+      double bbox[6] = { query_point.x() - search_radius, query_point.x() + search_radius,
+                         query_point.y() - search_radius, query_point.y() + search_radius,
+                         query_point.z() - search_radius, query_point.z() + search_radius };
+
+      vtkSmartPointer<vtkIdList> candidate_ids = vtkSmartPointer<vtkIdList>::New();
+      cell_locator_->FindCellsWithinBounds(bbox, candidate_ids);
+
+      for (vtkIdType c = 0; c < candidate_ids->GetNumberOfIds(); ++c)
       {
-        kd_tree_->FindClosestNPoints(1, query_point.data(), id_list);
+        vtkIdType cid = candidate_ids->GetId(c);
+        vtkSmartPointer<vtkGenericCell> cell = vtkSmartPointer<vtkGenericCell>::New();
+        mesh_data_->GetCell(cid, cell);
 
-        if (id_list->GetNumberOfIds() < 1)
-        {
-          return false;
-        }
+        double closest[3], weights[3];
+        double pcoords[3], dist2;
+        int subId;
+
+        cell->EvaluatePosition(query_point.data(), closest, subId, pcoords, dist2, weights);
+
+        if (dist2 <= search_radius * search_radius)
+          id_list->InsertNextId(cid);
       }
-
-      // compute normal average
-      normal_vect = Eigen::Vector3d::Zero();
-      std::size_t num_normals = 0;
-      for (auto p = 0; p < id_list->GetNumberOfIds(); p++)
-      {
-        Eigen::Vector3d temp_normal, query_point, closest_point;
-        vtkIdType p_id = id_list->GetId(p);
-
-        if (p_id < 0)
-        {
-          continue;
-        }
-
-        // get normal and add it to average
-        normal_data->GetTuple(p_id, temp_normal.data());
-        normal_vect += temp_normal.normalized();
-        num_normals++;
-      }
-
-      normal_vect /= num_normals;
     }
-    else{
+
+    if (id_list->GetNumberOfIds() < 1)
+    {
       Eigen::Vector3d closest_point;
       vtkIdType cellId;
       int subid;
       double dist2;
       cell_locator_->FindClosestPoint(query_point.data(), closest_point.data(), cellId, subid, dist2);
       mesh_data_->GetCellData()->GetNormals()->GetTuple(cellId, normal_vect.data());
+    }
+    else
+    {
+      normal_vect = Eigen::Vector3d::Zero();
+      for (auto p = 0; p < id_list->GetNumberOfIds(); p++)
+      {
+        Eigen::Vector3d temp_normal;
+        vtkIdType cell_id = id_list->GetId(p);
+        vtkCell* cell = mesh_data_->GetCell(cell_id);
+        mesh_data_->GetCellData()->GetNormals()->GetTuple(cell_id, temp_normal.data());
+        normal_vect += temp_normal.normalized();
+      }
     }
     normal_vect.normalize();
 
@@ -470,7 +475,7 @@ ToolPaths PlaneSlicerRasterPlanner::planImpl(const pcl::PolygonMesh& mesh) const
   pcl::VTKUtils::mesh2vtk(mesh, mesh_data_);
   mesh_data_->BuildLinks();
   mesh_data_->BuildCells();
-    if (!mesh_data_->GetPointData()->GetNormals() || !mesh_data_->GetCellData()->GetNormals())
+  if (!mesh_data_->GetPointData()->GetNormals() || !mesh_data_->GetCellData()->GetNormals())
   {
     vtkSmartPointer<vtkPolyDataNormals> normal_generator = vtkSmartPointer<vtkPolyDataNormals>::New();
     normal_generator->SetInputData(mesh_data_);
@@ -519,10 +524,12 @@ ToolPaths PlaneSlicerRasterPlanner::planImpl(const pcl::PolygonMesh& mesh) const
     centroid = pca.getMean().head<3>().cast<double>();
     pca_vecs = (pca.getEigenVectors().array().rowwise() * scales.transpose()).cast<double>();
     // Ensure consistency of direction of eigenvectors
-    if (pca_vecs.col(0).sum()<0){
+    if (pca_vecs.col(0).sum() < 0)
+    {
       pca_vecs.col(0) = -pca_vecs.col(0);
     }
-    if (pca_vecs.col(1).sum()<0){
+    if (pca_vecs.col(1).sum() < 0)
+    {
       pca_vecs.col(1) = -pca_vecs.col(1);
     }
     pca_vecs.col(2) = pca_vecs.col(0).cross(pca_vecs.col(1)).normalized() * scales(2);
