@@ -101,8 +101,8 @@ vtkSmartPointer<vtkPoints> enforcePointSpacing(const vtkSmartPointer<vtkPoints>&
   }
 
   // add last point
-  // points->GetPoint(points->GetNumberOfPoints() - 1, b.data());
-  // new_points->InsertNextPoint(b.data());
+  points->GetPoint(points->GetNumberOfPoints() - 1, b.data());
+  new_points->InsertNextPoint(b.data());
 
   return new_points;
 }
@@ -1122,8 +1122,8 @@ vtkSmartPointer<vtkPoints> CrossSlicerRasterPlanner::processAndAlignPoints(const
       points->GetPoint(pi, p.data());
       reversed_points->InsertNextPoint(p.data());
     }
-    // points = reversed_points;
-    return reversed_points;
+    points = reversed_points;
+    // return reversed_points;
   }
 
   return points;
@@ -1261,8 +1261,8 @@ bool CrossSlicerRasterPlanner::validateDiagonalPair(const std::vector<CrossRaste
 
   if (diagonal1_length < min_required_length || diagonal2_length < min_required_length)
   {
-    std::cout << "  Cross REJECTED: diagonal(s) too short. D1=" << diagonal1_length << ", D2=" << diagonal2_length
-              << ", Min required=" << min_required_length << std::endl;
+    // std::cout << "  Cross REJECTED: diagonal(s) too short. D1=" << diagonal1_length << ", D2=" << diagonal2_length
+    //           << ", Min required=" << min_required_length << std::endl;
     return false;
   }
 
@@ -1271,8 +1271,8 @@ bool CrossSlicerRasterPlanner::validateDiagonalPair(const std::vector<CrossRaste
 
   if (length_ratio > length_tolerance)
   {
-    std::cout << "  Cross REJECTED: diagonal length mismatch " << diagonal1_length << " vs " << diagonal2_length
-              << " (ratio: " << length_ratio << ")" << std::endl;
+    // std::cout << "  Cross REJECTED: diagonal length mismatch " << diagonal1_length << " vs " << diagonal2_length
+    //           << " (ratio: " << length_ratio << ")" << std::endl;
     return false;
   }
 
