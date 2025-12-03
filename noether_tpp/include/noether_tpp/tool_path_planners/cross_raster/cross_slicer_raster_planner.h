@@ -18,7 +18,7 @@
  */
 #pragma once
 
-#include <noether_tpp/tool_path_planners/raster/raster_planner.h>
+#include <noether_tpp/tool_path_planners/cross_raster/cross_raster_planner.h>
 #include <vtkAppendPolyData.h>
 #include <vtkCellArray.h>
 #include <vtkCellData.h>
@@ -58,10 +58,10 @@ namespace noether
  * smallest principal axis of the mesh.
  */
 
-class CrossSlicerRasterPlanner : public RasterPlanner
+class CrossSlicerRasterPlanner : public CrossRasterPlanner
 {
 public:
-  CrossSlicerRasterPlanner(DirectionGenerator::ConstPtr dir_gen, OriginGenerator::ConstPtr origin_gen);
+  CrossSlicerRasterPlanner(CrossDirectionGenerator::ConstPtr dir_gen, CrossOriginGenerator::ConstPtr origin_gen);
 
   void setSearchRadius(const double search_radius);
   void setMinSegmentSize(const double min_segment_size);
@@ -117,7 +117,7 @@ protected:
                             double& diagonal2_length) const;
 };
 
-struct CrossSlicerRasterPlannerFactory : public RasterPlannerFactory
+struct CrossSlicerRasterPlannerFactory : public CrossRasterPlannerFactory
 {
   bool bidirectional;
   double min_segment_size;

@@ -796,9 +796,9 @@ static std::tuple<Eigen::Vector3d, Eigen::Vector3d, Eigen::Vector3d, Eigen::Vect
 
 namespace noether
 {
-CrossSlicerRasterPlanner::CrossSlicerRasterPlanner(DirectionGenerator::ConstPtr dir_gen,
-                                                   OriginGenerator::ConstPtr origin_gen)
-  : RasterPlanner(std::move(dir_gen), std::move(origin_gen))
+CrossSlicerRasterPlanner::CrossSlicerRasterPlanner(CrossDirectionGenerator::ConstPtr dir_gen,
+                                                   CrossOriginGenerator::ConstPtr origin_gen)
+  : CrossRasterPlanner(std::move(dir_gen), std::move(origin_gen))
 {
 }
 
@@ -1187,7 +1187,6 @@ std::vector<CrossRasterConstructData> CrossSlicerRasterPlanner::processDiagonals
         double line_length = ::computeLength(points);
         if (line_length > min_segment_size_ && points->GetNumberOfPoints() > 1)
         {
-          std::cout << "  Line length: " << line_length << std::endl;
           // Enforce point spacing
           vtkSmartPointer<vtkPoints> new_points = enforcePointSpacing(points, line_length, point_spacing_);
 
@@ -1201,33 +1200,15 @@ std::vector<CrossRasterConstructData> CrossSlicerRasterPlanner::processDiagonals
           if (clipped_points->GetNumberOfPoints() < 2)
             continue;
 
-          // Ensure points are in the same direction
-
-          // If points are not aligned with cut_direction, reverse them
-          // Eigen::Vector3d p0, p1;
-          // clipped_points->GetPoint(0, p0.data());
-          // clipped_points->GetPoint(clipped_points->GetNumberOfPoints() - 1, p1.data());
-          // if ((p1 - p0).dot(current_cut_direction) < 0)
-          // {
-          //   vtkSmartPointer<vtkPoints> reversed_points = vtkSmartPointer<vtkPoints>::New();
-          //   for (vtkIdType pi = points->GetNumberOfPoints() - 1; pi >= 0; pi--)
-          //   {
-          //     std::array<double, 3> p;
-          //     clipped_points->GetPoint(pi, p.data());
-          //     reversed_points->InsertNextPoint(p.data());
-          //   }
-          //   clipped_points = reversed_points;
-          // }
-
           double clipped_length = ::computeLength(clipped_points);
-          std::cout << "  clipped_length : " << clipped_length << std::endl;
-
           if (clipped_length < min_segment_size_)
             continue;
 
+          vtkSmartPointer<vtkPoints> final_points = enforcePointSpacing(clipped_points, clipped_length, point_spacing_);
+
           // Create segment with normals
           vtkSmartPointer<vtkPolyData> segment_data = vtkSmartPointer<vtkPolyData>::New();
-          segment_data->SetPoints(clipped_points);
+          segment_data->SetPoints(final_points);
 
           if (!insertNormals(search_radius_, mesh_data, kd_tree, segment_data, cell_locator))
             continue;
