@@ -900,7 +900,8 @@ ToolPaths CrossSlicerRasterPlanner::planImpl(const pcl::PolygonMesh& mesh) const
         if (validateDiagonalPair(diagonal_rasters, diagonal1_length, diagonal2_length))
         {
           cross_rasters.insert(cross_rasters.end(), diagonal_rasters.begin(), diagonal_rasters.end());
-          printCrossRasters(pt_idx, current_center, diagonal1_length, diagonal2_length, diagonal_rasters, mesh_normal);
+          // printCrossRasters(pt_idx, current_center, diagonal1_length, diagonal2_length, diagonal_rasters,
+          // mesh_normal);
         }
       }
     }
@@ -969,10 +970,6 @@ void CrossSlicerRasterPlanner::computeCuttingPlaneParameters(const pcl::PolygonM
   cut_direction = dir_gen_->generate(mesh);
   cut_normal = (cut_direction.normalized().cross(mesh_normal)).normalized();
   cut_origin = origin_gen_->generate(mesh);
-
-  std::cout << "cut_normal: " << cut_normal << std::endl;
-  std::cout << "mesh_normal: " << mesh_normal << std::endl;
-  std::cout << "cut_direction: " << cut_direction << std::endl;
 }
 
 std::pair<double, double> CrossSlicerRasterPlanner::calculateCuttingRange(const Eigen::Matrix3d& pca_vecs,
