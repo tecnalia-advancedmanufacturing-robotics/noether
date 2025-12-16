@@ -763,33 +763,43 @@ void generateIntersectionData(const Eigen::Vector3d& cut_origin, const Eigen::Ve
   }
 }
 
-static std::tuple<Eigen::Vector3d, Eigen::Vector3d, Eigen::Vector3d, Eigen::Vector3d> calculateDiagonalCuts(
+static std::tuple<Eigen::Vector3d, Eigen::Vector3d> calculateDiagonalCuts(
     const Eigen::Vector3d& cross_center, const Eigen::Vector3d& cut_direction, const Eigen::Vector3d& cut_normal,
     const Eigen::Vector3d& mesh_normal, const double cross_width, const double cross_height)
 {
-  // Width direction (BL to BR)
+  Eigen::Vector3d cut_direction_d1, cut_direction_d2;
+
   Eigen::Vector3d u_axis = cut_direction.normalized();
-  // Height direction (BL to TR)
   Eigen::Vector3d v_axis = cut_normal.normalized();
 
-  // Bottom-Left (BL)
-  Eigen::Vector3d corner_BL = cross_center - cross_width / 2.0 * u_axis - cross_height / 2.0 * v_axis;
-  // Bottom-Right (BR)
-  Eigen::Vector3d corner_BR = corner_BL + cross_width * u_axis;
-  // Top-Left (TL)
-  Eigen::Vector3d corner_TL = corner_BL + cross_height * v_axis;
-  // Top-Right (TR)
-  Eigen::Vector3d corner_TR = corner_BL + cross_width * u_axis + cross_height * v_axis;
+  if (cross_height > 0.0 && cross_width > 0.0)
+  {
+    // Width direction (BL to BR), Height direction (BL to TR)
+    // Bottom-Left (BL)
+    Eigen::Vector3d corner_BL = cross_center - cross_width / 2.0 * u_axis - cross_height / 2.0 * v_axis;
+    // Bottom-Right (BR)
+    Eigen::Vector3d corner_BR = corner_BL + cross_width * u_axis;
+    // Top-Left (TL)
+    Eigen::Vector3d corner_TL = corner_BL + cross_height * v_axis;
+    // Top-Right (TR)
+    Eigen::Vector3d corner_TR = corner_BL + cross_width * u_axis + cross_height * v_axis;
 
-  // Diagonal 1: BL to TR
-  Eigen::Vector3d cut_origin_d1 = corner_BL;
-  Eigen::Vector3d cut_direction_d1 = (corner_TR - corner_BL).normalized();
+    // Diagonal 1: BL to TR
+    cut_direction_d1 = (corner_TR - corner_BL).normalized();
 
-  // Diagonal 2: TL to BR
-  Eigen::Vector3d cut_origin_d2 = corner_TL;
-  Eigen::Vector3d cut_direction_d2 = (corner_BR - corner_TL).normalized();
+    // Diagonal 2: TL to BR
+    cut_direction_d2 = (corner_BR - corner_TL).normalized();
+  }
+  else
+  {
+    // Diagonal 1: BL to TR
+    cut_direction_d1 = (u_axis + v_axis).normalized();
 
-  return std::make_tuple(cut_origin_d1, cut_direction_d1, cut_origin_d2, cut_direction_d2);
+    // Diagonal 2: TL to BR
+    cut_direction_d2 = (u_axis - v_axis).normalized();
+  }
+
+  return std::make_tuple(cut_direction_d1, cut_direction_d2);
 }
 
 }  // namespace
@@ -821,7 +831,6 @@ void CrossSlicerRasterPlanner::setCrossDimensions(const double width, const doub
 {
   cross_width_ = width;
   cross_height_ = height;
-  cross_length_ = std::sqrt(std::pow(cross_width_, 2) + std::pow(cross_height_, 2));
 }
 
 void CrossSlicerRasterPlanner::setCrossSpacing(const double cross_spacing)
@@ -897,11 +906,18 @@ ToolPaths CrossSlicerRasterPlanner::planImpl(const pcl::PolygonMesh& mesh) const
 
         // Validate and add diagonal pair
         double diagonal1_length, diagonal2_length;
-        if (validateDiagonalPair(diagonal_rasters, diagonal1_length, diagonal2_length))
+        if (cross_width_ > 0.0 && cross_height_ > 0.0)
+        {
+          if (validateDiagonalPair(diagonal_rasters))
+          {
+            cross_rasters.insert(cross_rasters.end(), diagonal_rasters.begin(), diagonal_rasters.end());
+            // printCrossRasters(pt_idx, current_center, diagonal1_length, diagonal2_length, diagonal_rasters,
+            // mesh_normal);
+          }
+        }
+        else
         {
           cross_rasters.insert(cross_rasters.end(), diagonal_rasters.begin(), diagonal_rasters.end());
-          // printCrossRasters(pt_idx, current_center, diagonal1_length, diagonal2_length, diagonal_rasters,
-          // mesh_normal);
         }
       }
     }
@@ -1134,8 +1150,8 @@ std::vector<CrossRasterConstructData> CrossSlicerRasterPlanner::processDiagonals
   std::vector<CrossRasterConstructData> temp_diagonals;
 
   // Calculate diagonal cut parameters
-  Eigen::Vector3d cut_origin_d1, cut_direction_d1, cut_origin_d2, cut_direction_d2;
-  std::tie(cut_origin_d1, cut_direction_d1, cut_origin_d2, cut_direction_d2) =
+  Eigen::Vector3d cut_direction_d1, cut_direction_d2;
+  std::tie(cut_direction_d1, cut_direction_d2) =
       calculateDiagonalCuts(current_loc, cut_direction, cut_normal, mesh_normal, cross_width_, cross_height_);
 
   // Iterate over both cross diagonals
@@ -1187,32 +1203,45 @@ std::vector<CrossRasterConstructData> CrossSlicerRasterPlanner::processDiagonals
           // Enforce point spacing
           vtkSmartPointer<vtkPoints> new_points = enforcePointSpacing(points, line_length, point_spacing_);
 
-          // Clip points to diagonal length
-          double diagonal_half_length = cross_length_ / 2.0;
-          vtkIdType respaced_center_idx = findClosestPoint(current_loc, new_points);
+          vtkSmartPointer<vtkPoints> segment_points = vtkSmartPointer<vtkPoints>::New();
+          double segment_length;
 
-          vtkSmartPointer<vtkPoints> clipped_points =
-              clipPointsAroundCenter(new_points, respaced_center_idx, diagonal_half_length);
+          // Clip points to diagonal length if cross dimentions are defined
+          if (cross_width_ > 0.0 && cross_height_ > 0.0)
+          {
+            const double cross_length = std::sqrt(std::pow(cross_width_, 2) + std::pow(cross_height_, 2));
+            double diagonal_half_length = cross_length / 2.0;
 
-          if (clipped_points->GetNumberOfPoints() < 2)
-            continue;
+            vtkIdType respaced_center_idx = findClosestPoint(current_loc, new_points);
 
-          double clipped_length = ::computeLength(clipped_points);
-          if (clipped_length < min_segment_size_)
-            continue;
+            vtkSmartPointer<vtkPoints> clipped_points =
+                clipPointsAroundCenter(new_points, respaced_center_idx, diagonal_half_length);
 
-          vtkSmartPointer<vtkPoints> final_points = enforcePointSpacing(clipped_points, clipped_length, point_spacing_);
+            if (clipped_points->GetNumberOfPoints() < 2)
+              continue;
+
+            segment_length = ::computeLength(clipped_points);
+            if (segment_length < min_segment_size_)
+              continue;
+
+            segment_points = enforcePointSpacing(clipped_points, segment_length, point_spacing_);
+          }
+          else
+          {
+            segment_points = new_points;
+            segment_length = line_length;
+          }
 
           // Create segment with normals
           vtkSmartPointer<vtkPolyData> segment_data = vtkSmartPointer<vtkPolyData>::New();
-          segment_data->SetPoints(final_points);
+          segment_data->SetPoints(segment_points);
 
           if (!insertNormals(search_radius_, mesh_data, kd_tree, segment_data, cell_locator))
             continue;
 
           CrossRasterConstructData diagonal_raster;
           diagonal_raster.raster_segments.push_back(segment_data);
-          diagonal_raster.segment_lengths.push_back(clipped_length);
+          diagonal_raster.segment_lengths.push_back(segment_length);
           temp_diagonals.push_back(diagonal_raster);
         }
       }
@@ -1222,20 +1251,20 @@ std::vector<CrossRasterConstructData> CrossSlicerRasterPlanner::processDiagonals
   return temp_diagonals;
 }
 
-bool CrossSlicerRasterPlanner::validateDiagonalPair(const std::vector<CrossRasterConstructData>& diagonals,
-                                                    double& diagonal1_length, double& diagonal2_length) const
+bool CrossSlicerRasterPlanner::validateDiagonalPair(const std::vector<CrossRasterConstructData>& diagonals) const
 {
   if (diagonals.size() != 2)
   {
     return false;
   }
 
-  diagonal1_length = diagonals[0].segment_lengths[0];
-  diagonal2_length = diagonals[1].segment_lengths[0];
+  const double diagonal1_length = diagonals[0].segment_lengths[0];
+  const double diagonal2_length = diagonals[1].segment_lengths[0];
 
   // Check minimum length requirement (90% of expected)
   const double min_length_tolerance = 0.10;
-  double min_required_length = cross_length_ * (1.0 - min_length_tolerance);
+  const double cross_length = std::sqrt(std::pow(cross_width_, 2) + std::pow(cross_height_, 2));
+  double min_required_length = cross_length * (1.0 - min_length_tolerance);
 
   if (diagonal1_length < min_required_length || diagonal2_length < min_required_length)
   {

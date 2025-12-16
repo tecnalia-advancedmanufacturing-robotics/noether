@@ -89,7 +89,6 @@ protected:
   double cross_width_;    // Width of cross rectangle
   double cross_height_;   // Height of cross rectangle
   double cross_spacing_;  // Spacing between crosses
-  double cross_length_;   // Length of cross rectangle diagonal
 
   vtkSmartPointer<vtkPolyData> updateMesh(const pcl::PolygonMesh& mesh) const;
   void computeCuttingPlaneParameters(const pcl::PolygonMesh& mesh, Eigen::Vector3d& mesh_normal,
@@ -113,8 +112,7 @@ protected:
       const Eigen::Vector3d& current_loc, vtkSmartPointer<vtkPolyData> mesh_data, const Eigen::Vector3d& cut_direction,
       const Eigen::Vector3d& cut_normal, const Eigen::Vector3d& mesh_normal,
       vtkSmartPointer<vtkKdTreePointLocator> kd_tree, vtkSmartPointer<vtkCellLocator> cell_locator) const;
-  bool validateDiagonalPair(const std::vector<CrossRasterConstructData>& diagonals, double& diagonal1_length,
-                            double& diagonal2_length) const;
+  bool validateDiagonalPair(const std::vector<CrossRasterConstructData>& diagonals) const;
 };
 
 struct CrossSlicerRasterPlannerFactory : public CrossRasterPlannerFactory
