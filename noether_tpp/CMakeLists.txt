@@ -45,7 +45,6 @@ add_library(${PROJECT_NAME} SHARED
   src/tool_path_modifiers/moving_average_orientation_smoothing_modifier.cpp
   src/tool_path_modifiers/raster_organization_modifier.cpp
   src/tool_path_modifiers/cross_raster_organization_modifier.cpp
-  src/tool_path_modifiers/grid_raster_organization_modifier.cpp
   src/tool_path_modifiers/snake_organization_modifier.cpp
   src/tool_path_modifiers/standard_edge_paths_organization_modifier.cpp
   src/tool_path_modifiers/linear_approach_modifier.cpp
@@ -68,10 +67,9 @@ add_library(${PROJECT_NAME} SHARED
   src/tool_path_planners/raster/direction_generators/principal_axis_direction_generator.cpp
   src/tool_path_planners/raster/direction_generators/pca_rotated_direction_generator.cpp
   src/tool_path_planners/raster/plane_slicer_raster_planner.cpp
+  src/tool_path_planners/raster/grid_slicer_raster_planner.cpp
   src/tool_path_planners/cross_raster/cross_raster_planner.cpp
   src/tool_path_planners/cross_raster/cross_slicer_raster_planner.cpp
-  src/tool_path_planners/grid_raster/grid_raster_planner.cpp
-  src/tool_path_planners/grid_raster/grid_slicer_raster_planner.cpp
 )
 
 if(${CMAKE_VERSION} VERSION_GREATER 3.15)

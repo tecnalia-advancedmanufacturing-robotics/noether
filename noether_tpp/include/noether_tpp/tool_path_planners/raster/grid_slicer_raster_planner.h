@@ -1,5 +1,5 @@
 /**
- * @file plane_slicer_raster_planner.h
+ * @file grid_slicer_raster_planner.h
  * @copyright Copyright (c) 2021, Southwest Research Institute
  *
  * @par License
@@ -18,7 +18,7 @@
  */
 #pragma once
 
-#include <noether_tpp/tool_path_planners/grid_raster/grid_raster_planner.h>
+#include <noether_tpp/tool_path_planners/raster/raster_planner.h>
 #include <vtkAppendPolyData.h>
 #include <vtkCellArray.h>
 #include <vtkCellData.h>
@@ -50,18 +50,18 @@ struct GridRasterConstructData
 namespace noether
 {
 /**
- * @ingroup cross_raster_planners
- * @brief An implementation of the Raster Planner using a series of parallel cutting planes to generate cross cuts.
+ * @ingroup grid_raster_planners
+ * @brief An implementation of the Raster Planner using a series of parallel cutting planes to generate grid cuts.
  * @details This implementation works best on approximately planar parts.
  * The direction generator defines the direction of the raster cut.
  * The cut normal (i.e., the raster step direction) is defined by the cross product of the cut direction and the
  * smallest principal axis of the mesh.
  */
 
-class GridSlicerRasterPlanner : public GridRasterPlanner
+class GridSlicerRasterPlanner : public RasterPlanner
 {
 public:
-  GridSlicerRasterPlanner(GridDirectionGenerator::ConstPtr dir_gen, GridOriginGenerator::ConstPtr origin_gen);
+  GridSlicerRasterPlanner(DirectionGenerator::ConstPtr dir_gen, OriginGenerator::ConstPtr origin_gen);
 
   void setSearchRadius(const double search_radius);
   void setMinSegmentSize(const double min_segment_size);
@@ -78,13 +78,12 @@ protected:
 
   /** @brief Flag indicating whether rasters should be generated in the direction of both the cut normal and its
    * negation */
-  // bool bidirectional_ = false;
   bool bidirectional_ = true;
   /** @brief Minimum length of valid segment (m) */
   double min_segment_size_;
   /** @brief Search radius for calculating normals (m) */
   double search_radius_;
-  /** @brief Intersection angle in the grid (rad) */
+  /** @brief Intersection angle of the grid (rad) */
   double intersection_angle_;
 
   vtkSmartPointer<vtkPolyData> updateMesh(const pcl::PolygonMesh& mesh) const;
@@ -107,7 +106,7 @@ protected:
                                                    const Eigen::Vector3d& cut_direction) const;
 };
 
-struct GridSlicerRasterPlannerFactory : public GridRasterPlannerFactory
+struct GridSlicerRasterPlannerFactory : public RasterPlannerFactory
 {
   bool bidirectional;
   double min_segment_size;

@@ -1,4 +1,4 @@
-#include <noether_tpp/tool_path_planners/grid_raster/grid_slicer_raster_planner.h>
+#include <noether_tpp/tool_path_planners/raster/grid_slicer_raster_planner.h>
 #include <noether_tpp/utils.h>
 
 #include <algorithm>  // std::find(), std::reverse(), std::unique()
@@ -583,9 +583,9 @@ void generateIntersectionData(const Eigen::Vector3d& cut_origin, const Eigen::Ve
 
 namespace noether
 {
-GridSlicerRasterPlanner::GridSlicerRasterPlanner(GridDirectionGenerator::ConstPtr dir_gen,
-                                                 GridOriginGenerator::ConstPtr origin_gen)
-  : GridRasterPlanner(std::move(dir_gen), std::move(origin_gen))
+GridSlicerRasterPlanner::GridSlicerRasterPlanner(DirectionGenerator::ConstPtr dir_gen,
+                                                 OriginGenerator::ConstPtr origin_gen)
+  : RasterPlanner(std::move(dir_gen), std::move(origin_gen))
 {
 }
 
@@ -928,6 +928,7 @@ ToolPathPlanner::ConstPtr GridSlicerRasterPlannerFactory::create() const
   planner->setMinSegmentSize(min_segment_size);
   planner->generateRastersBidirectionally(bidirectional);
   planner->setIntersectionAngle(intersection_angle);
+  planner->setGridPlanner(true);
 
   return std::move(planner);
 }
