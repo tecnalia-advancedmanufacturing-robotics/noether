@@ -1,7 +1,7 @@
 #include <noether_tpp/tool_path_planners/raster/grid_slicer_raster_planner.h>
 #include <noether_tpp/utils.h>
 
-#include <algorithm>  // std::find(), std::reverse(), std::unique()
+#include <algorithm>  // std::find(), std::reverse(), std::unique() std::clamp()
 #include <numeric>    // std::iota()
 #include <stdexcept>  // std::runtime_error
 #include <string>     // std::to_string()
@@ -607,6 +607,8 @@ void GridSlicerRasterPlanner::generateRastersBidirectionally(const bool bidirect
 void GridSlicerRasterPlanner::setIntersectionAngle(const double intersection_angle)
 {
   intersection_angle_ = intersection_angle;
+  // Ensure angle is between 0 and pi/2
+  intersection_angle_ = std::clamp(intersection_angle_, 0.0, M_PI_2);
 }
 
 ToolPaths GridSlicerRasterPlanner::planImpl(const pcl::PolygonMesh& mesh) const
@@ -628,30 +630,36 @@ ToolPaths GridSlicerRasterPlanner::planImpl(const pcl::PolygonMesh& mesh) const
   computeCuttingPlaneParameters(mesh, mesh_normal, pca_vecs, centroid, cut_direction, cut_normal, cut_origin);
 
   // Initialize params for primary rasters
-  auto [d_min_cut, d_max_cut] = calculateCuttingRange(pca_vecs, centroid, cut_origin, cut_normal);
+  Eigen::Vector3d cut_direction_primary = (std::cos(M_PI_2-intersection_angle_/2.0) * cut_direction.normalized() +
+                                           std::sin(M_PI_2-intersection_angle_/2.0) * cut_normal.normalized())
+                                              .normalized();
+  Eigen::Vector3d cut_normal_primary = (cut_direction_primary.normalized().cross(mesh_normal)).normalized();
 
-  const double cut_span = std::abs(d_max_cut - d_min_cut);
-  const auto num_planes = static_cast<std::size_t>(std::ceil(cut_span / line_spacing_));
-  const Eigen::Vector3d start_loc = cut_origin + cut_normal * d_min_cut;
+  auto [d_min_cut_primary, d_max_cut_primary] =
+      calculateCuttingRange(pca_vecs, centroid, cut_origin, cut_normal_primary);
+
+  const double cut_span_primary = std::abs(d_max_cut_primary - d_min_cut_primary);
+  const auto num_planes = static_cast<std::size_t>(std::ceil(cut_span_primary / line_spacing_));
+  const Eigen::Vector3d start_loc = cut_origin + cut_normal_primary * d_min_cut_primary;
 
   // Generate primary rasters
-  vtkSmartPointer<vtkAppendPolyData> raster_data = vtkSmartPointer<vtkAppendPolyData>::New();
+  vtkSmartPointer<vtkAppendPolyData> raster_data_primary = vtkSmartPointer<vtkAppendPolyData>::New();
   for (std::size_t i = 0; i < num_planes + 1; i++)
   {
-    Eigen::Vector3d current_loc = start_loc + i * line_spacing_ * cut_normal;
-    generateIntersectionData(current_loc, cut_normal, raster_data, mesh_data);
+    Eigen::Vector3d current_loc = start_loc + i * line_spacing_ * cut_normal_primary;
+    generateIntersectionData(current_loc, cut_normal_primary, raster_data_primary, mesh_data);
   }
 
   std::vector<GridRasterConstructData> merged_rasters_vec;
 
   // Process raster slices into segments
   std::vector<GridRasterConstructData> primary_rasters_vec;
-  raster_data->Update();
-  vtkIdType num_slices = raster_data->GetTotalNumberOfInputConnections();
+  raster_data_primary->Update();
+  vtkIdType num_slices = raster_data_primary->GetTotalNumberOfInputConnections();
   for (std::size_t i = 0; i < num_slices; i++)
   {
     GridRasterConstructData raster_primary =
-        processRasterSlice(raster_data->GetInput(i), mesh_data, cut_direction, kd_tree, cell_locator, i);
+        processRasterSlice(raster_data_primary->GetInput(i), mesh_data, cut_direction_primary, kd_tree, cell_locator, i);
 
     // Save raster
     if (!raster_primary.raster_segments.empty())
@@ -662,10 +670,9 @@ ToolPaths GridSlicerRasterPlanner::planImpl(const pcl::PolygonMesh& mesh) const
   }
 
   // Initialize params for secondary rasters
-  Eigen::Vector3d u_axis = cut_direction.normalized();
-  Eigen::Vector3d v_axis = cut_normal.normalized();
-  Eigen::Vector3d cut_direction_secondary =
-      (std::cos(intersection_angle_) * u_axis + std::sin(intersection_angle_) * v_axis).normalized();
+  Eigen::Vector3d cut_direction_secondary = (std::cos(intersection_angle_) * cut_direction_primary.normalized() +
+                                             std::sin(intersection_angle_) * cut_normal_primary.normalized())
+                                                .normalized();
   Eigen::Vector3d cut_normal_secondary = (cut_direction_secondary.normalized().cross(mesh_normal)).normalized();
 
   auto [d_min_cut_secondary, d_max_cut_secondary] =
