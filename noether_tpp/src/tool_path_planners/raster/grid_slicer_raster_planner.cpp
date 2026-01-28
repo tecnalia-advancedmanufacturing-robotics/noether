@@ -630,8 +630,8 @@ ToolPaths GridSlicerRasterPlanner::planImpl(const pcl::PolygonMesh& mesh) const
   computeCuttingPlaneParameters(mesh, mesh_normal, pca_vecs, centroid, cut_direction, cut_normal, cut_origin);
 
   // Initialize params for primary rasters
-  Eigen::Vector3d cut_direction_primary = (std::cos(M_PI_2-intersection_angle_/2.0) * cut_direction.normalized() +
-                                           std::sin(M_PI_2-intersection_angle_/2.0) * cut_normal.normalized())
+  Eigen::Vector3d cut_direction_primary = (std::cos(M_PI_2 - intersection_angle_ / 2.0) * cut_direction.normalized() +
+                                           std::sin(M_PI_2 - intersection_angle_ / 2.0) * cut_normal.normalized())
                                               .normalized();
   Eigen::Vector3d cut_normal_primary = (cut_direction_primary.normalized().cross(mesh_normal)).normalized();
 
@@ -658,8 +658,8 @@ ToolPaths GridSlicerRasterPlanner::planImpl(const pcl::PolygonMesh& mesh) const
   vtkIdType num_slices = raster_data_primary->GetTotalNumberOfInputConnections();
   for (std::size_t i = 0; i < num_slices; i++)
   {
-    GridRasterConstructData raster_primary =
-        processRasterSlice(raster_data_primary->GetInput(i), mesh_data, cut_direction_primary, kd_tree, cell_locator, i);
+    GridRasterConstructData raster_primary = processRasterSlice(raster_data_primary->GetInput(i), mesh_data,
+                                                                cut_direction_primary, kd_tree, cell_locator, i);
 
     // Save raster
     if (!raster_primary.raster_segments.empty())
