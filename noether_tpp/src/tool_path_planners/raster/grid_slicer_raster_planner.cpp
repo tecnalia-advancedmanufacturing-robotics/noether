@@ -935,7 +935,7 @@ ToolPathPlanner::ConstPtr GridSlicerRasterPlannerFactory::create() const
   planner->setMinSegmentSize(min_segment_size);
   planner->generateRastersBidirectionally(bidirectional);
   planner->setIntersectionAngle(intersection_angle);
-  planner->setGridPlanner(true);
+  planner->setGridPlanner(grid_planner);
 
   return std::move(planner);
 }
