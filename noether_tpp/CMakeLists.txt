@@ -44,6 +44,7 @@ add_library(${PROJECT_NAME} SHARED
   src/tool_path_modifiers/fixed_orientation_modifier.cpp
   src/tool_path_modifiers/moving_average_orientation_smoothing_modifier.cpp
   src/tool_path_modifiers/raster_organization_modifier.cpp
+  src/tool_path_modifiers/grid_raster_organization_modifier.cpp
   src/tool_path_modifiers/cross_raster_organization_modifier.cpp
   src/tool_path_modifiers/snake_organization_modifier.cpp
   src/tool_path_modifiers/standard_edge_paths_organization_modifier.cpp
