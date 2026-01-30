@@ -729,6 +729,7 @@ ToolPathPlanner::ConstPtr PlaneSlicerRasterPlannerFactory::create() const
   planner->setSearchRadius(search_radius);
   planner->setMinSegmentSize(min_segment_size);
   planner->generateRastersBidirectionally(bidirectional);
+  planner->setGridPlanner(grid_planner);
 
   return std::move(planner);
 }

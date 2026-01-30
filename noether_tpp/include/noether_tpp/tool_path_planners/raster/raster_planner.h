@@ -73,6 +73,7 @@ public:
   void setPointSpacing(const double point_spacing);
   void setLineSpacing(const double line_spacing);
   void setMinHoleSize(const double min_hole_size);
+  void setGridPlanner(const bool grid_planner);
 
 protected:
   /**
@@ -83,6 +84,8 @@ protected:
   DirectionGenerator::ConstPtr dir_gen_;
   OriginGenerator::ConstPtr origin_gen_;
 
+  /** @brief grid planner */
+  bool grid_planner_;
   /** @brief Distance between waypoints on the same raster line (m) */
   double point_spacing_;
   /** @brief Distance between raster lines */
@@ -98,6 +101,8 @@ protected:
  */
 struct RasterPlannerFactory : public ToolPathPlannerFactory
 {
+  /** @brief Set to true in case of grid planner */
+  bool grid_planner;
   /** @brief Distance between waypoints on the same raster line (m) */
   double point_spacing;
   /** @brief Distance between raster lines */
