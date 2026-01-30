@@ -4,6 +4,7 @@
 #include <utility>  // std::move()
 
 #include <noether_tpp/tool_path_modifiers/raster_organization_modifier.h>
+#include <noether_tpp/tool_path_modifiers/grid_raster_organization_modifier.h>
 #include <noether_tpp/tool_path_modifiers/fixed_orientation_modifier.h>
 
 namespace noether
@@ -22,14 +23,17 @@ ToolPaths RasterPlanner::plan(const pcl::PolygonMesh& mesh) const
 
   if (grid_planner_)
   {
-    // Apply modifications
-    return tool_paths;
+    // Apply modifications necessary to orginaze the position of the waypoints into a grid
+    GridRasterOrganizationModifier grid;
+    tool_paths = grid.modify(tool_paths);
   }
-
-  // Apply the modifications necessary to produce the "default" behavior
-  // First, organize the position of the waypoints into a raster pattern
-  RasterOrganizationModifier raster;
-  tool_paths = raster.modify(tool_paths);
+  else
+  {
+    // Apply the modifications necessary to produce the "default" behavior
+    // First, organize the position of the waypoints into a raster pattern
+    RasterOrganizationModifier raster;
+    tool_paths = raster.modify(tool_paths);
+  }
 
   // Next, update the orientation of the waypoints such that their x-axes align with the direction of travel between
   // adjacent waypoints. Note: this modifier does not change the z-axis of the waypoints (normal to the surface)
