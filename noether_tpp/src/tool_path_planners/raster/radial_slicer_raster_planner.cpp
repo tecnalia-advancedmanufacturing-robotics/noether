@@ -1,4 +1,4 @@
-#include <noether_tpp/tool_path_planners/raster/grid_slicer_raster_planner.h>
+#include <noether_tpp/tool_path_planners/raster/radial_slicer_raster_planner.h>
 #include <noether_tpp/utils.h>
 
 #include <algorithm>  // std::find(), std::reverse(), std::unique() std::clamp()
@@ -178,6 +178,40 @@ void removeRedundant(std::vector<std::vector<vtkIdType>>& points_lists)
   points_lists.assign(new_points_lists.begin(), new_points_lists.end());
 }
 
+vtkSmartPointer<vtkPoints> clipPointsFromOrigin(const vtkSmartPointer<vtkPoints>& points, vtkIdType origin_idx,
+                                                const Eigen::Vector3d& cut_direction)
+{
+  vtkSmartPointer<vtkPoints> clipped_points = vtkSmartPointer<vtkPoints>::New();
+
+  if (origin_idx < 0 || origin_idx >= points->GetNumberOfPoints())
+  {
+    return clipped_points;
+  }
+
+  Eigen::Vector3d origin;
+  points->GetPoint(origin_idx, origin.data());
+  Eigen::Vector3d cut_dir = cut_direction.normalized();
+  clipped_points->InsertNextPoint(origin.data());
+
+  for (vtkIdType i = origin_idx + 1; i < points->GetNumberOfPoints(); i++)
+  {
+    Eigen::Vector3d point;
+    points->GetPoint(i, point.data());
+    Eigen::Vector3d vec = point - origin;
+    double projection = vec.dot(cut_dir);
+    if (projection > 0.0)
+    {
+      clipped_points->InsertNextPoint(point.data());
+    }
+    else
+    {
+      break;
+    }
+  }
+
+  return clipped_points;
+}
+
 void mergeRasterSegments(const vtkSmartPointer<vtkPoints>& points, double merge_dist,
                          std::vector<std::vector<vtkIdType>>& points_lists)
 {
@@ -269,10 +303,10 @@ void mergeRasterSegments(const vtkSmartPointer<vtkPoints>& points, double merge_
                [](const IdList& l) { return l.size() > 1; });
 }
 
-noether::ToolPaths convertToPoses(const std::vector<GridRasterConstructData>& rasters_data)
+noether::ToolPaths convertToPoses(const std::vector<RadialRasterConstructData>& rasters_data)
 {
   noether::ToolPaths rasters_array;
-  for (const GridRasterConstructData& rd : rasters_data)
+  for (const RadialRasterConstructData& rd : rasters_data)
   {
     noether::ToolPath raster_path;
     std::vector<vtkSmartPointer<vtkPolyData>> raster_segments;
@@ -444,76 +478,6 @@ static std::tuple<double, double> getDistancesToMinMaxCuts(const Eigen::Matrix3d
   return std::make_tuple(d_min, d_max);
 }
 
-void printToolPaths(const noether::ToolPaths& tool_paths)
-{
-  std::cout << "\n----------------------------------------" << std::endl;
-  std::cout << "TOOL PATH DEBUG: number of crosses is " << tool_paths.size() << std::endl;
-
-  for (std::size_t raster_idx = 0; raster_idx < tool_paths.size(); ++raster_idx)
-  {
-    const noether::ToolPath& raster_path = tool_paths[raster_idx];
-
-    std::cout << "----------------------------------------" << std::endl;
-    std::cout << "Cross #" << raster_idx << std::endl;
-    std::cout << "  Number of segments: " << raster_path.size() << std::endl;
-
-    for (std::size_t seg_idx = 0; seg_idx < raster_path.size(); ++seg_idx)
-    {
-      const noether::ToolPathSegment& segment = raster_path[seg_idx];
-      std::cout << "    Segment #" << seg_idx << std::endl;
-      std::cout << "      Number of poses/points: " << segment.size() << std::endl;
-
-      if (segment.empty())
-      {
-        std::cout << "      WARNING: Empty segment!" << std::endl;
-        continue;
-      }
-
-      double segment_length = 0.0;
-      for (std::size_t pose_idx = 1; pose_idx < segment.size(); ++pose_idx)
-      {
-        Eigen::Vector3d p_prev = segment[pose_idx - 1].translation();
-        Eigen::Vector3d p_curr = segment[pose_idx].translation();
-        segment_length += (p_curr - p_prev).norm();
-      }
-      std::cout << "      Segment length: " << segment_length << std::endl;
-
-      // Print first pose
-      Eigen::Vector3d poseInit = segment.front().translation();
-      Eigen::Vector3d normalInit = segment.front().rotation().col(2);  // Z-axis is normal
-
-      std::cout << "      First pose/point:" << std::endl;
-      std::cout << "        Position: [" << poseInit.x() << ", " << poseInit.y() << ", " << poseInit.z() << "]"
-                << std::endl;
-      std::cout << "        Normal: [" << normalInit.x() << ", " << normalInit.y() << ", " << normalInit.z() << "]"
-                << std::endl;
-
-      // Print last pose
-      Eigen::Vector3d poseEnd = segment.back().translation();
-      Eigen::Vector3d normalEnd = segment.back().rotation().col(2);
-
-      std::cout << "      Last pose:" << std::endl;
-      std::cout << "        Position: [" << poseEnd.x() << ", " << poseEnd.y() << ", " << poseEnd.z() << "]"
-                << std::endl;
-      std::cout << "        Normal: [" << normalEnd.x() << ", " << normalEnd.y() << ", " << normalEnd.z() << "]"
-                << std::endl;
-
-      Eigen::Vector3d direction = (poseEnd - poseInit).normalized();
-      std::cout << "      Direction: [" << direction.x() << ", " << direction.y() << ", " << direction.z() << "]"
-                << std::endl;
-
-      // Print all points
-      std::cout << "      All points of segment #" << seg_idx << ":" << std::endl;
-      for (std::size_t pose_idx = 0; pose_idx < segment.size(); ++pose_idx)
-      {
-        Eigen::Vector3d pos = segment[pose_idx].translation();
-        std::cout << "        Pose #" << pose_idx << ": [" << pos.x() << ", " << pos.y() << ", " << pos.z() << "]"
-                  << std::endl;
-      }
-    }
-  }
-}
-
 void determinePrincipalAxes(const pcl::PolygonMesh& mesh, Eigen::Vector3d& mesh_normal, Eigen::Matrix3d& pca_vecs,
                             Eigen::Vector3d& centroid)
 {
@@ -583,35 +547,42 @@ void generateIntersectionData(const Eigen::Vector3d& cut_origin, const Eigen::Ve
 
 namespace noether
 {
-GridSlicerRasterPlanner::GridSlicerRasterPlanner(DirectionGenerator::ConstPtr dir_gen,
-                                                 OriginGenerator::ConstPtr origin_gen)
+RadialSlicerRasterPlanner::RadialSlicerRasterPlanner(DirectionGenerator::ConstPtr dir_gen,
+                                                     OriginGenerator::ConstPtr origin_gen)
   : RasterPlanner(std::move(dir_gen), std::move(origin_gen))
 {
 }
 
-void GridSlicerRasterPlanner::setMinSegmentSize(const double min_segment_size)
+void RadialSlicerRasterPlanner::setMinSegmentSize(const double min_segment_size)
 {
   min_segment_size_ = min_segment_size;
 }
 
-void GridSlicerRasterPlanner::setSearchRadius(const double search_radius)
+void RadialSlicerRasterPlanner::setSearchRadius(const double search_radius)
 {
   search_radius_ = search_radius;
 }
 
-void GridSlicerRasterPlanner::generateRastersBidirectionally(const bool bidirectional)
+void RadialSlicerRasterPlanner::generateRastersBidirectionally(const bool bidirectional)
 {
   bidirectional_ = bidirectional;
 }
 
-void GridSlicerRasterPlanner::setIntersectionAngle(const double intersection_angle)
+void RadialSlicerRasterPlanner::setRadialNumCuts(const int num_radial_cuts)
 {
-  intersection_angle_ = intersection_angle;
-  // Ensure angle is between 0 and pi/2
-  intersection_angle_ = std::clamp(intersection_angle_, 0.0, M_PI_2);
+  if (num_radial_cuts < 1)
+  {
+    num_radial_cuts_ = 1;
+  }
+  num_radial_cuts_ = num_radial_cuts;
 }
 
-ToolPaths GridSlicerRasterPlanner::planImpl(const pcl::PolygonMesh& mesh) const
+void RadialSlicerRasterPlanner::setCutSymmetry(const bool symmetric_cuts)
+{
+  symmetric_cuts_ = symmetric_cuts;
+}
+
+ToolPaths RadialSlicerRasterPlanner::planImpl(const pcl::PolygonMesh& mesh) const
 {
   vtkSmartPointer<vtkPolyData> mesh_data = updateMesh(mesh);
 
@@ -629,91 +600,64 @@ ToolPaths GridSlicerRasterPlanner::planImpl(const pcl::PolygonMesh& mesh) const
   Eigen::Matrix3d pca_vecs;
   computeCuttingPlaneParameters(mesh, mesh_normal, pca_vecs, centroid, cut_direction, cut_normal, cut_origin);
 
-  // Initialize params for primary rasters
-  Eigen::Vector3d cut_direction_primary = (std::cos(M_PI_2 - intersection_angle_ / 2.0) * cut_direction.normalized() +
-                                           std::sin(M_PI_2 - intersection_angle_ / 2.0) * cut_normal.normalized())
-                                              .normalized();
-  Eigen::Vector3d cut_normal_primary = (cut_direction_primary.normalized().cross(mesh_normal)).normalized();
+  std::cout << "Cutting plane parameters: " << std::endl;
+  std::cout << "  mesh_normal: " << mesh_normal.transpose() << std::endl;
+  std::cout << "  cut_direction: " << cut_direction.transpose() << std::endl;
+  std::cout << "  cut_normal: " << cut_normal.transpose() << std::endl;
+  std::cout << "  cut_origin: " << cut_origin.transpose() << std::endl;
 
-  auto [d_min_cut_primary, d_max_cut_primary] =
-      calculateCuttingRange(pca_vecs, centroid, cut_origin, cut_normal_primary);
+  // Generate rasters for multiple cuts by rotating the cut direction by the intersection angle
+  int num_cuts = num_radial_cuts_;
+  double radial_cut_angle;
 
-  const double cut_span_primary = std::abs(d_max_cut_primary - d_min_cut_primary);
-  const auto num_planes = static_cast<std::size_t>(std::ceil(cut_span_primary / line_spacing_));
-  const Eigen::Vector3d start_loc = cut_origin + cut_normal_primary * d_min_cut_primary;
+  if (symmetric_cuts_)
+  {
+    radial_cut_angle = 2.0 * M_PI / static_cast<double>(num_cuts);
+  }
+  else
+  {
+    radial_cut_angle = M_PI / static_cast<double>(num_cuts);
+  }
+
+  std::cout << "Number of cuts to generate: " << num_cuts << std::endl;
+  std::cout << "Cut angle: " << radial_cut_angle << std::endl;
+  std::vector<RadialRasterConstructData> merged_rasters_vec;
 
   // Generate primary rasters
-  vtkSmartPointer<vtkAppendPolyData> raster_data_primary = vtkSmartPointer<vtkAppendPolyData>::New();
-  for (std::size_t i = 0; i < num_planes + 1; i++)
+  for (std::size_t i = 0; i < num_cuts; i++)
   {
-    Eigen::Vector3d current_loc = start_loc + i * line_spacing_ * cut_normal_primary;
-    generateIntersectionData(current_loc, cut_normal_primary, raster_data_primary, mesh_data);
-  }
+    double current_intersection_angle = radial_cut_angle * i;
 
-  std::vector<GridRasterConstructData> merged_rasters_vec;
-
-  // Process raster slices into segments
-  std::vector<GridRasterConstructData> primary_rasters_vec;
-  raster_data_primary->Update();
-  vtkIdType num_slices = raster_data_primary->GetTotalNumberOfInputConnections();
-  for (std::size_t i = 0; i < num_slices; i++)
-  {
-    GridRasterConstructData raster_primary = processRasterSlice(raster_data_primary->GetInput(i), mesh_data,
-                                                                cut_direction_primary, kd_tree, cell_locator, i);
-
-    // Save raster
-    if (!raster_primary.raster_segments.empty())
-    {
-      primary_rasters_vec.push_back(raster_primary);
-      merged_rasters_vec.push_back(raster_primary);
-    }
-  }
-
-  // Initialize params for secondary rasters
-  Eigen::Vector3d cut_direction_secondary = (std::cos(intersection_angle_) * cut_direction_primary.normalized() +
-                                             std::sin(intersection_angle_) * cut_normal_primary.normalized())
+    Eigen::Vector3d current_cut_direction = (std::cos(current_intersection_angle) * cut_direction.normalized() +
+                                             std::sin(current_intersection_angle) * cut_normal.normalized())
                                                 .normalized();
-  Eigen::Vector3d cut_normal_secondary = (cut_direction_secondary.normalized().cross(mesh_normal)).normalized();
 
-  auto [d_min_cut_secondary, d_max_cut_secondary] =
-      calculateCuttingRange(pca_vecs, centroid, cut_origin, cut_normal_secondary);
+    vtkSmartPointer<vtkAppendPolyData> raster_data_primary = vtkSmartPointer<vtkAppendPolyData>::New();
+    Eigen::Vector3d current_cut_normal = (current_cut_direction.normalized().cross(mesh_normal)).normalized();
+    generateIntersectionData(cut_origin, current_cut_normal, raster_data_primary, mesh_data);
 
-  const double cut_span_secondary = std::abs(d_max_cut_secondary - d_min_cut_secondary);
-  const auto num_planes_secondary = static_cast<std::size_t>(std::ceil(cut_span_secondary / line_spacing_));
-  const Eigen::Vector3d start_loc_secondary = cut_origin + cut_normal_secondary * d_min_cut_secondary;
-
-  // Generate secondary rasters
-  vtkSmartPointer<vtkAppendPolyData> raster_data_secondary = vtkSmartPointer<vtkAppendPolyData>::New();
-  for (std::size_t i = 0; i < num_planes_secondary + 1; i++)
-  {
-    Eigen::Vector3d current_loc = start_loc_secondary + i * line_spacing_ * cut_normal_secondary;
-    generateIntersectionData(current_loc, cut_normal_secondary, raster_data_secondary, mesh_data);
-  }
-
-  // Process raster slices into segments
-  std::vector<GridRasterConstructData> secondary_rasters_vec;
-  raster_data_secondary->Update();
-  vtkIdType num_slices_secondary = raster_data_secondary->GetTotalNumberOfInputConnections();
-  for (std::size_t i = 0; i < num_slices_secondary; i++)
-  {
-    GridRasterConstructData raster_secondary = processRasterSlice(raster_data_secondary->GetInput(i), mesh_data,
-                                                                  cut_direction_secondary, kd_tree, cell_locator, i);
-
-    // Save raster
-    if (!raster_secondary.raster_segments.empty())
+    // Process raster slices into segments
+    raster_data_primary->Update();
+    vtkIdType num_slices = raster_data_primary->GetTotalNumberOfInputConnections();
+    for (std::size_t j = 0; j < num_slices; j++)
     {
-      secondary_rasters_vec.push_back(raster_secondary);
-      merged_rasters_vec.push_back(raster_secondary);
+      RadialRasterConstructData raster_primary = processRasterSlice(
+          cut_origin, raster_data_primary->GetInput(j), mesh_data, current_cut_direction, kd_tree, cell_locator, j);
+
+      // Save raster
+      if (!raster_primary.raster_segments.empty())
+      {
+        merged_rasters_vec.push_back(raster_primary);
+      }
     }
   }
 
   // Convert to tool paths
   ToolPaths tool_paths = convertToPoses(merged_rasters_vec);
-  // printToolPaths(tool_paths);
   return tool_paths;
 }
 
-vtkSmartPointer<vtkPolyData> GridSlicerRasterPlanner::updateMesh(const pcl::PolygonMesh& mesh) const
+vtkSmartPointer<vtkPolyData> RadialSlicerRasterPlanner::updateMesh(const pcl::PolygonMesh& mesh) const
 {
   if (!hasNormals(mesh))
   {
@@ -757,10 +701,11 @@ vtkSmartPointer<vtkPolyData> GridSlicerRasterPlanner::updateMesh(const pcl::Poly
   return mesh_data;
 }
 
-void GridSlicerRasterPlanner::computeCuttingPlaneParameters(const pcl::PolygonMesh& mesh, Eigen::Vector3d& mesh_normal,
-                                                            Eigen::Matrix3d& pca_vecs, Eigen::Vector3d& centroid,
-                                                            Eigen::Vector3d& cut_direction, Eigen::Vector3d& cut_normal,
-                                                            Eigen::Vector3d& cut_origin) const
+void RadialSlicerRasterPlanner::computeCuttingPlaneParameters(const pcl::PolygonMesh& mesh,
+                                                              Eigen::Vector3d& mesh_normal, Eigen::Matrix3d& pca_vecs,
+                                                              Eigen::Vector3d& centroid, Eigen::Vector3d& cut_direction,
+                                                              Eigen::Vector3d& cut_normal,
+                                                              Eigen::Vector3d& cut_origin) const
 {
   // Use principal component analysis (PCA) to determine the principal axes of the mesh
   determinePrincipalAxes(mesh, mesh_normal, pca_vecs, centroid);
@@ -771,10 +716,10 @@ void GridSlicerRasterPlanner::computeCuttingPlaneParameters(const pcl::PolygonMe
   cut_origin = origin_gen_->generate(mesh);
 }
 
-std::pair<double, double> GridSlicerRasterPlanner::calculateCuttingRange(const Eigen::Matrix3d& pca_vecs,
-                                                                         const Eigen::Vector3d& centroid,
-                                                                         const Eigen::Vector3d& cut_origin,
-                                                                         const Eigen::Vector3d& cut_normal) const
+std::pair<double, double> RadialSlicerRasterPlanner::calculateCuttingRange(const Eigen::Matrix3d& pca_vecs,
+                                                                           const Eigen::Vector3d& centroid,
+                                                                           const Eigen::Vector3d& cut_origin,
+                                                                           const Eigen::Vector3d& cut_normal) const
 {
   double d_min_cut, d_max_cut;
   std::tie(d_min_cut, d_max_cut) = getDistancesToMinMaxCuts(pca_vecs, centroid, cut_origin, cut_normal);
@@ -796,14 +741,15 @@ std::pair<double, double> GridSlicerRasterPlanner::calculateCuttingRange(const E
   return { d_min_cut, d_max_cut };
 }
 
-GridRasterConstructData GridSlicerRasterPlanner::processRasterSlice(vtkSmartPointer<vtkPolyData> raster_lines,
-                                                                    vtkSmartPointer<vtkPolyData> mesh_data,
-                                                                    const Eigen::Vector3d& cut_direction,
-                                                                    vtkSmartPointer<vtkKdTreePointLocator> kd_tree,
-                                                                    vtkSmartPointer<vtkCellLocator> cell_locator,
-                                                                    std::size_t slice_index) const
+RadialRasterConstructData RadialSlicerRasterPlanner::processRasterSlice(const Eigen::Vector3d& cut_origin,
+                                                                        vtkSmartPointer<vtkPolyData> raster_lines,
+                                                                        vtkSmartPointer<vtkPolyData> mesh_data,
+                                                                        const Eigen::Vector3d& cut_direction,
+                                                                        vtkSmartPointer<vtkKdTreePointLocator> kd_tree,
+                                                                        vtkSmartPointer<vtkCellLocator> cell_locator,
+                                                                        std::size_t slice_index) const
 {
-  GridRasterConstructData raster;
+  RadialRasterConstructData raster;
 
   if (raster_lines->GetNumberOfLines() == 0)
     return raster;
@@ -817,6 +763,8 @@ GridRasterConstructData GridSlicerRasterPlanner::processRasterSlice(vtkSmartPoin
   // Remove redundant indices and merge segments
   removeRedundant(raster_ids);
   mergeRasterSegments(raster_lines->GetPoints(), min_hole_size_, raster_ids);
+
+  int num_seg = 0;
 
   // Process each segment
   for (auto& point_ids : raster_ids)
@@ -832,10 +780,23 @@ GridRasterConstructData GridSlicerRasterPlanner::processRasterSlice(vtkSmartPoin
     {
       // Enforce point spacing
       vtkSmartPointer<vtkPoints> new_points = enforcePointSpacing(points, line_length, point_spacing_);
+      vtkSmartPointer<vtkPoints> segment_points = vtkSmartPointer<vtkPoints>::New();
+
+      // Find idx of origin point and clip from there along cut direction
+      vtkIdType origin_idx = findClosestPoint(cut_origin, new_points);
+      vtkSmartPointer<vtkPoints> clipped_points = clipPointsFromOrigin(new_points, origin_idx, cut_direction);
+
+      if (clipped_points->GetNumberOfPoints() < 2)
+        continue;
+      double segment_length = ::computeLength(clipped_points);
+      if (segment_length < min_segment_size_)
+        continue;
+
+      segment_points = enforcePointSpacing(clipped_points, segment_length, point_spacing_);
 
       // add new points to segment
       vtkSmartPointer<vtkPolyData> segment_data = vtkSmartPointer<vtkPolyData>::New();
-      segment_data->SetPoints(new_points);
+      segment_data->SetPoints(segment_points);
 
       // inserting normals
       if (!insertNormals(search_radius_, mesh_data, kd_tree, segment_data, cell_locator))
@@ -855,7 +816,7 @@ GridRasterConstructData GridSlicerRasterPlanner::processRasterSlice(vtkSmartPoin
 }
 
 std::vector<std::vector<vtkIdType>>
-GridSlicerRasterPlanner::extractRasterSegmentIds(vtkSmartPointer<vtkPolyData> raster_lines) const
+RadialSlicerRasterPlanner::extractRasterSegmentIds(vtkSmartPointer<vtkPolyData> raster_lines) const
 {
   std::vector<std::vector<vtkIdType>> raster_ids;
 
@@ -892,9 +853,9 @@ GridSlicerRasterPlanner::extractRasterSegmentIds(vtkSmartPointer<vtkPolyData> ra
   return raster_ids;
 }
 
-vtkSmartPointer<vtkPoints> GridSlicerRasterPlanner::processAndAlignPoints(const std::vector<vtkIdType>& point_ids,
-                                                                          vtkSmartPointer<vtkPolyData> raster_lines,
-                                                                          const Eigen::Vector3d& cut_direction) const
+vtkSmartPointer<vtkPoints> RadialSlicerRasterPlanner::processAndAlignPoints(const std::vector<vtkIdType>& point_ids,
+                                                                            vtkSmartPointer<vtkPolyData> raster_lines,
+                                                                            const Eigen::Vector3d& cut_direction) const
 {
   vtkSmartPointer<vtkPoints> points = vtkSmartPointer<vtkPoints>::New();
 
@@ -925,16 +886,17 @@ vtkSmartPointer<vtkPoints> GridSlicerRasterPlanner::processAndAlignPoints(const 
   return points;
 }
 
-ToolPathPlanner::ConstPtr GridSlicerRasterPlannerFactory::create() const
+ToolPathPlanner::ConstPtr RadialSlicerRasterPlannerFactory::create() const
 {
-  auto planner = std::make_unique<GridSlicerRasterPlanner>(direction_gen(), origin_gen());
+  auto planner = std::make_unique<RadialSlicerRasterPlanner>(direction_gen(), origin_gen());
   planner->setLineSpacing(line_spacing);
   planner->setPointSpacing(point_spacing);
   planner->setMinHoleSize(min_hole_size);
   planner->setSearchRadius(search_radius);
   planner->setMinSegmentSize(min_segment_size);
   planner->generateRastersBidirectionally(bidirectional);
-  planner->setIntersectionAngle(intersection_angle);
+  planner->setRadialNumCuts(num_radial_cuts);
+  planner->setCutSymmetry(symmetric_cuts);
   planner->setGridPlanner(grid_planner);
   planner->setRadialPlanner(radial_planner);
 

@@ -27,7 +27,7 @@ ToolPaths RasterPlanner::plan(const pcl::PolygonMesh& mesh) const
     GridRasterOrganizationModifier grid;
     tool_paths = grid.modify(tool_paths);
   }
-  else
+  else if (!radial_planner_)
   {
     // Apply the modifications necessary to produce the "default" behavior
     // First, organize the position of the waypoints into a raster pattern
@@ -45,6 +45,7 @@ ToolPaths RasterPlanner::plan(const pcl::PolygonMesh& mesh) const
 }
 
 void RasterPlanner::setGridPlanner(const bool grid_planner) { grid_planner_ = grid_planner; }
+void RasterPlanner::setRadialPlanner(const bool radial_planner) { radial_planner_ = radial_planner; }
 void RasterPlanner::setPointSpacing(const double point_spacing) { point_spacing_ = point_spacing; }
 void RasterPlanner::setLineSpacing(const double line_spacing) { line_spacing_ = line_spacing; }
 void RasterPlanner::setMinHoleSize(const double min_hole_size) { min_hole_size_ = min_hole_size; };
