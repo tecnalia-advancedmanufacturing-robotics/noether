@@ -607,24 +607,23 @@ ToolPaths RadialSlicerRasterPlanner::planImpl(const pcl::PolygonMesh& mesh) cons
   std::cout << "  cut_origin: " << cut_origin.transpose() << std::endl;
 
   // Generate rasters for multiple cuts by rotating the cut direction by the intersection angle
-  int num_cuts = num_radial_cuts_;
   double radial_cut_angle;
 
   if (symmetric_cuts_)
   {
-    radial_cut_angle = 2.0 * M_PI / static_cast<double>(num_cuts);
+    radial_cut_angle = 2.0 * M_PI / num_radial_cuts_;
   }
   else
   {
-    radial_cut_angle = M_PI / static_cast<double>(num_cuts);
+    radial_cut_angle = M_PI / num_radial_cuts_;
   }
 
-  std::cout << "Number of cuts to generate: " << num_cuts << std::endl;
+  std::cout << "Number of cuts to generate: " << num_radial_cuts_ << std::endl;
   std::cout << "Cut angle: " << radial_cut_angle << std::endl;
   std::vector<RadialRasterConstructData> merged_rasters_vec;
 
   // Generate primary rasters
-  for (std::size_t i = 0; i < num_cuts; i++)
+  for (std::size_t i = 0; i < num_radial_cuts_; i++)
   {
     double current_intersection_angle = radial_cut_angle * i;
 
