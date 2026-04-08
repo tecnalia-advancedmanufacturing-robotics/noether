@@ -74,6 +74,7 @@ public:
   void setLineSpacing(const double line_spacing);
   void setMinHoleSize(const double min_hole_size);
   void setGridPlanner(const bool grid_planner);
+  void setRadialPlanner(const bool radial_planner);
 
 protected:
   /**
@@ -86,6 +87,8 @@ protected:
 
   /** @brief grid planner */
   bool grid_planner_;
+  /** @brief radial planner */
+  bool radial_planner_;
   /** @brief Distance between waypoints on the same raster line (m) */
   double point_spacing_;
   /** @brief Distance between raster lines */
@@ -103,6 +106,8 @@ struct RasterPlannerFactory : public ToolPathPlannerFactory
 {
   /** @brief Set to true in case of grid planner */
   bool grid_planner;
+  /** @brief Set to true in case of radial planner */
+  bool radial_planner;
   /** @brief Distance between waypoints on the same raster line (m) */
   double point_spacing;
   /** @brief Distance between raster lines */

@@ -69,6 +69,7 @@ add_library(${PROJECT_NAME} SHARED
   src/tool_path_planners/raster/direction_generators/pca_rotated_direction_generator.cpp
   src/tool_path_planners/raster/plane_slicer_raster_planner.cpp
   src/tool_path_planners/raster/grid_slicer_raster_planner.cpp
+  src/tool_path_planners/raster/radial_slicer_raster_planner.cpp
   src/tool_path_planners/cross_raster/cross_raster_planner.cpp
   src/tool_path_planners/cross_raster/cross_slicer_raster_planner.cpp
 )
