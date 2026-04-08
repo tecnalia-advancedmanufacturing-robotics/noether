@@ -600,11 +600,11 @@ ToolPaths RadialSlicerRasterPlanner::planImpl(const pcl::PolygonMesh& mesh) cons
   Eigen::Matrix3d pca_vecs;
   computeCuttingPlaneParameters(mesh, mesh_normal, pca_vecs, centroid, cut_direction, cut_normal, cut_origin);
 
-  std::cout << "Cutting plane parameters: " << std::endl;
-  std::cout << "  mesh_normal: " << mesh_normal.transpose() << std::endl;
-  std::cout << "  cut_direction: " << cut_direction.transpose() << std::endl;
-  std::cout << "  cut_normal: " << cut_normal.transpose() << std::endl;
-  std::cout << "  cut_origin: " << cut_origin.transpose() << std::endl;
+  // std::cout << "Cutting plane parameters: " << std::endl;
+  // std::cout << "  mesh_normal: " << mesh_normal.transpose() << std::endl;
+  // std::cout << "  cut_direction: " << cut_direction.transpose() << std::endl;
+  // std::cout << "  cut_normal: " << cut_normal.transpose() << std::endl;
+  // std::cout << "  cut_origin: " << cut_origin.transpose() << std::endl;
 
   // Generate rasters for multiple cuts by rotating the cut direction by the intersection angle
   double radial_cut_angle;
@@ -618,8 +618,8 @@ ToolPaths RadialSlicerRasterPlanner::planImpl(const pcl::PolygonMesh& mesh) cons
     radial_cut_angle = M_PI / num_radial_cuts_;
   }
 
-  std::cout << "Number of cuts to generate: " << num_radial_cuts_ << std::endl;
-  std::cout << "Cut angle: " << radial_cut_angle << std::endl;
+  // std::cout << "Number of cuts to generate: " << num_radial_cuts_ << std::endl;
+  // std::cout << "Cut angle: " << radial_cut_angle << std::endl;
   std::vector<RadialRasterConstructData> merged_rasters_vec;
 
   // Generate primary rasters
