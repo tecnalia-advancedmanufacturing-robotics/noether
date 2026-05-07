@@ -6,6 +6,7 @@
 #include <pcl/io/vtk_lib_io.h>
 #include <pcl/point_types.h>
 #include <pcl/common/io.h>
+#include <pcl/surface/vtk_smoothing/vtk_mesh_quadric_decimation.h>
 #include <vtkPointData.h>
 
 #include <console_bridge/console.h>
@@ -93,12 +94,22 @@ bool convertToMeshMsg(const pcl::PolygonMesh& mesh, shape_msgs::msg::Mesh& mesh_
   return true;
 }
 
-bool savePLYFile(const std::string& filename, const shape_msgs::msg::Mesh& mesh_msg, unsigned precision, bool binary)
+bool savePLYFile(const std::string& filename, const shape_msgs::msg::Mesh& mesh_msg, unsigned precision, bool binary, int max_triangles)
 {
   pcl::PolygonMesh mesh;
   if (!convertToPCLMesh(mesh_msg, mesh))
   {
     return false;
+  }
+
+  if (static_cast<int>(mesh.polygons.size()) > max_triangles)
+  {
+    float reduction = 1.0f - (float)max_triangles / (float)mesh.polygons.size();
+
+    pcl::MeshQuadricDecimationVTK decimator;
+    decimator.setInputMesh(pcl::make_shared<pcl::PolygonMesh>(mesh));
+    decimator.setTargetReductionFactor(reduction);
+    decimator.process(mesh);
   }
 
   bool success = false;
