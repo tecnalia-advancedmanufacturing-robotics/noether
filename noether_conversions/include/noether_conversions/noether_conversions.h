@@ -58,7 +58,8 @@ bool convertToMeshMsg(const pcl::PolygonMesh& mesh, shape_msgs::msg::Mesh& mesh_
 bool savePLYFile(const std::string& filename,
                  const shape_msgs::msg::Mesh& mesh_msg,
                  unsigned precision = 10,
-                 bool binary = true);
+                 bool binary = true,
+                 int max_triangles = 16000);
 
 /**
  * @brief loads from a PLY file
