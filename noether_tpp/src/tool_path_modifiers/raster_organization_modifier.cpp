@@ -7,10 +7,15 @@ namespace noether
 {
 ToolPaths RasterOrganizationModifier::modify(ToolPaths tool_paths) const
 {
-  const Eigen::Vector3d reference_segment_dir = estimateToolPathDirection(tool_paths.at(0));
+  std::vector<Eigen::Vector3d> reference_segment_dirs;
 
+  int i = 0;
+  int j = 0;
   for (ToolPath& tool_path : tool_paths)
   {
+    Eigen::Vector3d reference_segment_dir = estimateToolPathDirection(tool_paths.at(i));
+    reference_segment_dirs.push_back(reference_segment_dir);
+
     // Sort the waypoints within each tool path segment by their distance along the reference direction
     for (ToolPathSegment& segment : tool_path)
     {
@@ -21,6 +26,7 @@ ToolPaths RasterOrganizationModifier::modify(ToolPaths tool_paths) const
                   Eigen::Vector3d diff_from_start_a = a.translation() - segment.at(0).translation();
                   return diff_from_start_a.dot(reference_segment_dir) < diff_from_start_b.dot(reference_segment_dir);
                 });
+      j++;
     }
 
     // Sort the tool path segments within each tool path by the distance of their first waypoints along the reference
@@ -32,10 +38,20 @@ ToolPaths RasterOrganizationModifier::modify(ToolPaths tool_paths) const
                 Eigen::Vector3d diff_from_start_a = a.at(0).translation() - tool_path.at(0).at(0).translation();
                 return diff_from_start_a.dot(reference_segment_dir) < diff_from_start_b.dot(reference_segment_dir);
               });
+    i++;
   }
 
   // Sort the tool paths by their distance along a vector that is perpendicular to the reference direction of travel
-  const Eigen::Vector3d reference_tool_paths_dir = estimateRasterDirection(tool_paths, reference_segment_dir);
+  // Find mean of the reference segment directions to use as the reference tool path direction
+  Eigen::Vector3d reference_segment_dir_mean = Eigen::Vector3d::Zero();
+  for (const Eigen::Vector3d& reference_segment_dir : reference_segment_dirs)
+  {
+    reference_segment_dir_mean += reference_segment_dir;
+  }
+  reference_segment_dir_mean /= reference_segment_dirs.size();
+  reference_segment_dir_mean.normalize();
+
+  const Eigen::Vector3d reference_tool_paths_dir = estimateRasterDirection(tool_paths, reference_segment_dir_mean);
   const Eigen::Isometry3d first_wp = tool_paths.at(0).at(0).at(0);
   std::sort(tool_paths.begin(),
             tool_paths.end(),
