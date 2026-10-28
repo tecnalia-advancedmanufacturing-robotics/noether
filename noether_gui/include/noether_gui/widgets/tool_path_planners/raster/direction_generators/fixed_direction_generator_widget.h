@@ -22,7 +22,8 @@ public:
   void save(YAML::Node&) const override;
 
 private:
-  Ui::Vector3dEditor* ui_;
+  Ui::Vector3dEditor* cut_direction_ui_;
+  Ui::Vector3dEditor* cut_normal_ui_;
 };
 
 }  // namespace noether

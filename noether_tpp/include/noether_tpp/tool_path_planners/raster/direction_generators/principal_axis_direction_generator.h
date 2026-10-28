@@ -12,7 +12,8 @@ class PrincipalAxisDirectionGenerator : public DirectionGenerator
 {
 public:
   PrincipalAxisDirectionGenerator(double rotation_offset = 0.0);
-  Eigen::Vector3d generate(const pcl::PolygonMesh& mesh) const override final;
+  Eigen::Vector3d generate_cut_direction(const pcl::PolygonMesh& mesh) const override final;
+  Eigen::Vector3d generate_mesh_normal(const pcl::PolygonMesh& mesh) const override final;
 
 private:
   /**

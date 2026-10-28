@@ -983,7 +983,8 @@ void CrossSlicerRasterPlanner::computeCuttingPlaneParameters(const pcl::PolygonM
   determinePrincipalAxes(mesh, mesh_normal, pca_vecs, centroid);
 
   // Get the cutting plane parameters
-  cut_direction = dir_gen_->generate(mesh);
+  cut_direction = dir_gen_->generate_cut_direction(mesh);
+  mesh_normal = dir_gen_->generate_mesh_normal(mesh);
   cut_normal = (cut_direction.normalized().cross(mesh_normal)).normalized();
   cut_origin = origin_gen_->generate(mesh);
 }

@@ -40,7 +40,8 @@ struct DirectionGenerator
   using ConstPtr = std::unique_ptr<const DirectionGenerator>;
 
   virtual ~DirectionGenerator() = default;
-  virtual Eigen::Vector3d generate(const pcl::PolygonMesh& mesh) const = 0;
+  virtual Eigen::Vector3d generate_cut_direction(const pcl::PolygonMesh& mesh) const = 0;
+  virtual Eigen::Vector3d generate_mesh_normal(const pcl::PolygonMesh& mesh) const = 0;
 };
 
 /**
