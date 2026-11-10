@@ -10,7 +10,7 @@ PrincipalAxisDirectionGenerator::PrincipalAxisDirectionGenerator(double rotation
 {
 }
 
-Eigen::Vector3d PrincipalAxisDirectionGenerator::generate(const pcl::PolygonMesh& mesh) const
+Eigen::Vector3d PrincipalAxisDirectionGenerator::generate_cut_direction(const pcl::PolygonMesh& mesh) const
 {
   auto vertices = pcl::make_shared<pcl::PointCloud<pcl::PointXYZ>>();
   pcl::fromPCLPointCloud2(mesh.cloud, *vertices);
@@ -24,4 +24,12 @@ Eigen::Vector3d PrincipalAxisDirectionGenerator::generate(const pcl::PolygonMesh
   return Eigen::AngleAxisd(rotation_offset_, pca_vecs.col(2).normalized()) * pca_vecs.col(1).normalized();
 }
 
+Eigen::Vector3d PrincipalAxisDirectionGenerator::generate_mesh_normal(const pcl::PolygonMesh& mesh) const
+{
+  auto vertices = pcl::make_shared<pcl::PointCloud<pcl::PointXYZ>>();
+  pcl::fromPCLPointCloud2(mesh.cloud, *vertices);
+  pcl::PCA<pcl::PointXYZ> pca;
+  pca.setInputCloud(vertices);
+  return pca.getEigenVectors().col(2).cast<double>().normalized();
+}
 }  // namespace noether

@@ -22,7 +22,8 @@ public:
 
   PCARotatedDirectionGenerator(DirectionGenerator::ConstPtr&& dir_gen, double rotation_angle);
 
-  Eigen::Vector3d generate(const pcl::PolygonMesh& mesh) const override;
+  Eigen::Vector3d generate_cut_direction(const pcl::PolygonMesh& mesh) const override final;
+  Eigen::Vector3d generate_mesh_normal(const pcl::PolygonMesh& mesh) const override final;
 
 protected:
   const DirectionGenerator::ConstPtr dir_gen_;

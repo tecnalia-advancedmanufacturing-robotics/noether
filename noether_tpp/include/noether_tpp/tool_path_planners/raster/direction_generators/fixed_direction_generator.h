@@ -12,11 +12,13 @@ namespace noether
 class FixedDirectionGenerator : public DirectionGenerator, public CrossDirectionGenerator
 {
 public:
-  FixedDirectionGenerator(const Eigen::Vector3d& direction);
-  Eigen::Vector3d generate(const pcl::PolygonMesh& mesh) const override final;
+  FixedDirectionGenerator(const Eigen::Vector3d& cut_direction, const Eigen::Vector3d& cut_normal);
+  Eigen::Vector3d generate_cut_direction(const pcl::PolygonMesh& mesh) const override final;
+  Eigen::Vector3d generate_mesh_normal(const pcl::PolygonMesh& mesh) const override final;
 
 private:
-  const Eigen::Vector3d direction_;
+  const Eigen::Vector3d cut_direction_;
+  const Eigen::Vector3d cut_normal_;
 };
 
 }  // namespace noether
