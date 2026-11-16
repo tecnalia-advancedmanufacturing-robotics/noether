@@ -72,6 +72,8 @@ add_library(${PROJECT_NAME} SHARED
   src/tool_path_planners/raster/radial_slicer_raster_planner.cpp
   src/tool_path_planners/cross_raster/cross_raster_planner.cpp
   src/tool_path_planners/cross_raster/cross_slicer_raster_planner.cpp
+  src/tool_path_planners/spiral_raster/spiral_raster_planner.cpp
+  src/tool_path_planners/spiral_raster/spiral_slicer_raster_planner.cpp
 )
 
 if(${CMAKE_VERSION} VERSION_GREATER 3.15)

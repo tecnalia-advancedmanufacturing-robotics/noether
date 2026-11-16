@@ -1,6 +1,7 @@
 #pragma once
 
 #include <noether_tpp/tool_path_planners/raster/raster_planner.h>
+#include <noether_tpp/tool_path_planners/spiral_raster/spiral_raster_planner.h>
 
 namespace noether
 {
@@ -8,7 +9,7 @@ namespace noether
  * @ingroup direction_generators
  * @brief Generates the raster direction along the largest principal axis of the input mesh
  */
-class PrincipalAxisDirectionGenerator : public DirectionGenerator
+class PrincipalAxisDirectionGenerator : public DirectionGenerator, public SpiralDirectionGenerator
 {
 public:
   PrincipalAxisDirectionGenerator(double rotation_offset = 0.0);

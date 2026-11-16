@@ -2,6 +2,7 @@
 
 #include <noether_tpp/tool_path_planners/raster/raster_planner.h>
 #include <noether_tpp/tool_path_planners/cross_raster/cross_raster_planner.h>
+#include <noether_tpp/tool_path_planners/spiral_raster/spiral_raster_planner.h>
 
 namespace noether
 {
@@ -9,7 +10,7 @@ namespace noether
  * @ingroup direction_generators
  * @brief Generates the raster direction based on a fixed input
  */
-class FixedDirectionGenerator : public DirectionGenerator, public CrossDirectionGenerator
+class FixedDirectionGenerator : public DirectionGenerator, public CrossDirectionGenerator, public SpiralDirectionGenerator
 {
 public:
   FixedDirectionGenerator(const Eigen::Vector3d& cut_direction, const Eigen::Vector3d& cut_normal);
