@@ -53,6 +53,15 @@ std::vector<pcl::PolygonMesh> NormalsFromMeshFacesMeshModifier::modify(const pcl
     using FAVC = TriangleMesh::FaceAroundVertexCirculator;
     FAVC circ = tri_mesh.getFaceAroundVertexCirculator(TriangleMesh::VertexIndex(i));
 
+    // Handle non-manifold meshes
+    if (!circ.isValid())
+    {
+      pcl::Normal normal;
+      normal.getNormalVector3fMap().setZero();
+      normals_cloud.push_back(normal);
+      continue;
+    }
+
     FAVC circ_end = circ;
     do
     {
